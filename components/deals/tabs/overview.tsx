@@ -118,9 +118,12 @@ export function OverviewTab({ bundle, onUnderwrite }: { bundle: DealBundle; onUn
 function Fact({ label, value, source, sub }: { label: string; value: React.ReactNode; source?: Source; sub?: string }) {
   return (
     <div className="bg-surface px-5 py-4">
-      <dt className="flex items-center justify-between gap-2 text-[13px] text-muted">{label}<SourceTag source={source} /></dt>
+      <dt className="text-[13px] text-muted">{label}</dt>
       <dd className="mt-1 text-lg font-semibold tracking-tight tabular">{value}</dd>
-      {sub ? <dd className="text-xs text-muted">{sub}</dd> : null}
+      <dd className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted">
+        <SourceTag source={source} />
+        {sub ? <span>{sub}</span> : null}
+      </dd>
     </div>
   );
 }
@@ -267,7 +270,7 @@ function EditDetails({ bundle }: { bundle: DealBundle }) {
           <Field label="Name" htmlFor="e-name" className="sm:col-span-3"><Input id="e-name" value={v.name} onChange={(e) => setV({ ...v, name: e.target.value })} /></Field>
           <Field label="City" htmlFor="e-city"><Input id="e-city" value={v.market_city} onChange={(e) => setV({ ...v, market_city: e.target.value })} /></Field>
           <Field label="State" htmlFor="e-state"><Input id="e-state" maxLength={2} value={v.market_state} onChange={(e) => setV({ ...v, market_state: e.target.value })} /></Field>
-          <Field label="Year built" htmlFor="e-yb"><NumberInput id="e-yb" value={v.year_built} onChange={(x) => setV({ ...v, year_built: x })} /></Field>
+          <Field label="Year built" htmlFor="e-yb"><NumberInput id="e-yb" grouping={false} value={v.year_built} onChange={(x) => setV({ ...v, year_built: x })} /></Field>
           <Field label="Units" htmlFor="e-units"><NumberInput id="e-units" value={v.units} onChange={(x) => setV({ ...v, units: x })} /></Field>
           <Field label="NRSF" htmlFor="e-nrsf"><NumberInput id="e-nrsf" value={v.nrsf} onChange={(x) => setV({ ...v, nrsf: x })} /></Field>
           <Field label="Acres" htmlFor="e-acres"><NumberInput id="e-acres" decimals={2} value={v.acres} onChange={(x) => setV({ ...v, acres: x })} /></Field>

@@ -123,7 +123,7 @@ export function PipelineBoard({ deals: initial }: { deals: DealSummary[] }) {
       </div>
 
       <DndContext sensors={sensors} onDragStart={(e) => setDragId(String(e.active.id))} onDragEnd={onDragEnd} onDragCancel={() => setDragId(null)}>
-        <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6 lg:-mx-10 lg:px-10">
+        <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0">
           {columns.map((stage) => {
             const col = visible.filter((d) => d.stage === stage);
             const total = col.reduce((s, d) => s + (d.target_price ?? d.list_price ?? 0), 0);

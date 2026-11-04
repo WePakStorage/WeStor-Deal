@@ -75,7 +75,7 @@ export function OmReview({ dealId, docId, docName, status, note, initial }: { de
             </Field>
             {(["units", "nrsf", "acres", "buildings", "year_built"] as const).map((k) => (
               <Field key={k} label={{ units: "Units", nrsf: "NRSF", acres: "Acres", buildings: "Buildings", year_built: "Year built" }[k]} htmlFor={`r-${k}`}>
-                <NumberInput id={`r-${k}`} decimals={k === "acres" ? 2 : 0} value={d.property[k]} onChange={(v) => set("property", { [k]: v })} />
+                <NumberInput id={`r-${k}`} grouping={k !== "year_built"} decimals={k === "acres" ? 2 : 0} value={d.property[k]} onChange={(v) => set("property", { [k]: v })} />
                 <Tag dirty={changed(d.property[k], initial.property[k])} />
               </Field>
             ))}

@@ -92,6 +92,21 @@ export function UnderwritingWorkspace({ deal, financials, defaults }: { deal: De
                 <Segmented label="NOI basis" value={basis} onChange={setBasis} options={periods.map((p) => ({ value: p, label: PERIOD_LABEL[p] }))} />
               </Control>
             </div>
+
+            <div className="mt-9 rounded-xl border border-line-soft bg-raised/40 p-4">
+              <div className="flex items-center justify-between text-[13px] text-muted">
+                <span>Capital stack</span>
+                <span className="tabular">{money(r.debtService / 12)} / mo payment</span>
+              </div>
+              <div className="mt-3 flex h-2.5 overflow-hidden rounded-full" aria-hidden>
+                <div className="bg-gold" style={{ width: `${down * 100}%` }} />
+                <div className="bg-door/70" style={{ width: `${(1 - down) * 100}%` }} />
+              </div>
+              <div className="mt-3 flex justify-between text-sm tabular">
+                <span className="flex items-center gap-2"><span className="size-2 rounded-full bg-gold" />Equity {money(r.equity)}</span>
+                <span className="flex items-center gap-2"><span className="size-2 rounded-full bg-door/70" />Loan {money(r.loan)}</span>
+              </div>
+            </div>
           </div>
 
           {/* Outputs */}

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { DealView } from "@/components/deals/deal-view";
 import { rankBuyers } from "@/lib/matching";
+import { computeFlags } from "@/lib/om/flags";
 import { canGenerateOm } from "@/lib/pipeline";
 import { requireContext } from "@/lib/server/context";
 import { isPro } from "@/lib/server/gate";
@@ -19,6 +20,19 @@ export default async function DealPage({ params, searchParams }: { params: Promi
   const { store, orgId } = await requireContext();
   const [bundle, org, pro] = await Promise.all([store.getDealBundle(orgId, id), store.getOrg(orgId), isPro(store, orgId)]);
   if (!bundle) notFound();
+
+  // Deals entered by hand (or seeded) have no stored OM flags: run the same checks on saved data.
+  if (bundle.flags.length === 0 && bundle.financials.length > 0) {
+    bundle.flags = computeFlags({
+      units: bundle.deal.units,
+      nrsf: bundle.deal.nrsf,
+      physicalOccupancy: bundle.deal.physical_occupancy,
+      askingPrice: bundle.deal.list_price,
+      appraisedValue: bundle.deal.appraised_value,
+      unitMix: bundle.unitMix,
+      periods: bundle.financials,
+    }).map((f, i) => ({ ...f, id: `computed-${i}`, deal_id: id }));
+  }
 
   let matches = null;
   if (pro) {

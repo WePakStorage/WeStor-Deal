@@ -5,15 +5,17 @@ import { cn } from "@/lib/cn";
 import { Input } from "./primitives";
 
 /** Number field that shows thousands separators and returns number | null. */
-export function NumberInput({ value, onChange, prefix, suffix, className, decimals = 0, ...rest }: {
+export function NumberInput({ value, onChange, prefix, suffix, className, decimals = 0, grouping = true, ...rest }: {
   value: number | null;
   onChange: (v: number | null) => void;
   prefix?: string;
   suffix?: string;
   decimals?: number;
+  /** false for years and IDs: no thousands separator */
+  grouping?: boolean;
   className?: string;
 } & Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChange" | "prefix">) {
-  const fmt = React.useCallback((n: number | null) => (n === null ? "" : n.toLocaleString("en-US", { maximumFractionDigits: decimals })), [decimals]);
+  const fmt = React.useCallback((n: number | null) => (n === null ? "" : n.toLocaleString("en-US", { maximumFractionDigits: decimals, useGrouping: grouping })), [decimals, grouping]);
   const [text, setText] = React.useState(fmt(value));
   const [focused, setFocused] = React.useState(false);
   React.useEffect(() => {

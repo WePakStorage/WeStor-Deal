@@ -94,6 +94,7 @@ create table public.deals (
   construction text,
   listing_url text,
   om_narrative text,
+  sources jsonb not null default '{}',
   -- A deal can only sit in Under contract / Assigned with a recorded contract
   constraint contract_required check (
     stage not in ('under_contract','assigned') or (contract_signed_at is not null and contract_price is not null)

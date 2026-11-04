@@ -122,6 +122,8 @@ export interface Deal {
   is_sample: boolean;
   construction: string | null;
   listing_url: string | null;
+  /** Where each fact came from, keyed by deal field name. */
+  sources: Partial<Record<string, Source>>;
   created_at: string;
   updated_at: string;
 }
@@ -179,6 +181,7 @@ export interface DealDocument {
   parsed: boolean;
   parse_status: "pending" | "parsed" | "needs_review" | "failed" | "n/a";
   parse_error: string | null;
+  extraction?: unknown;
   created_at: string;
 }
 

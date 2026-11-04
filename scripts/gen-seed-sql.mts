@@ -21,7 +21,7 @@ lines.push("language plpgsql security definer set search_path = public as $$");
 lines.push("declare");
 deals.forEach((_, i) => lines.push(`  d${i} uuid := gen_random_uuid();`));
 lines.push("begin");
-const dealCols = ["name","market_city","market_state","address","property_type","units","nrsf","acres","buildings","year_built","physical_occupancy","list_price","target_price","appraised_value","appraisal_date","stage","contract_signed_at","contract_price","assignable","notes","is_sample","construction"] as const;
+const dealCols = ["name","market_city","market_state","address","property_type","units","nrsf","acres","buildings","year_built","physical_occupancy","list_price","target_price","appraised_value","appraisal_date","stage","contract_signed_at","contract_price","assignable","notes","is_sample","construction","sources"] as const;
 deals.forEach((d, i) => {
   lines.push(`  insert into deals(id, org_id, ${dealCols.join(", ")}) values (d${i}, target, ${dealCols.map((c) => q(d[c])).join(", ")});`);
 });

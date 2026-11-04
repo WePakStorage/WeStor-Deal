@@ -26,6 +26,7 @@ export async function createDeal(input: DealInput): Promise<ActionResult<{ id: s
       contract_price: null,
       assignable: false,
       is_sample: false,
+      sources: Object.fromEntries(Object.entries(fields).filter(([, val]) => typeof val === "number").map(([k]) => [k, "user" as const])),
     });
     const noi = t12_noi ?? (t12_egi != null && t12_expenses != null ? t12_egi - t12_expenses : null);
     if (noi !== null || t12_egi != null) {
@@ -53,7 +54,11 @@ export async function createDeal(input: DealInput): Promise<ActionResult<{ id: s
 export async function updateDeal(dealId: string, patch: Partial<DealInput>): Promise<ActionResult<Deal>> {
   return run(async ({ store, orgId, user }) => {
     const v = dealPatchSchema.parse(patch);
-    const deal = await store.updateDeal(orgId, z.string().uuid().parse(dealId), v);
+    const current = await store.getDealBundle(orgId, z.string().uuid().parse(dealId));
+    if (!current) throw new HttpError(404, "Deal not found");
+    const edited = Object.keys(v).filter((k) => typeof v[k as keyof typeof v] === "number");
+    const sources = { ...current.deal.sources, ...Object.fromEntries(edited.map((k) => [k, "user" as const])) };
+    const deal = await store.updateDeal(orgId, dealId, { ...v, sources });
     await store.logActivity({ org_id: orgId, deal_id: dealId, actor: user.name, action: "deal_updated", payload: { fields: Object.keys(v) } });
     revalidatePath(`/app/deals/${dealId}`);
     return deal;

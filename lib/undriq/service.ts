@@ -9,6 +9,7 @@ import { ASSET_CLASSES, assetOf, PROPERTY_TYPE_LABELS, type AssetClass } from ".
 import { analyze, DEFAULT_RULES, fmtPct, normalizeRules, teaser, type Analysis, type BuyBoxRules, type DealFacts } from "./engine";
 import { EXTRACT_SYSTEM, extractedSchema, extractPrompt, factsFrom, heuristicExtract, MEMO_SYSTEM, memoPrompt, memoSchema, mergeExtracted, toNumber, type Extracted } from "./extract";
 import { parseListingUrl } from "./linkparse";
+import { groundMemo, sanityCheck } from "./guards";
 import { cachedRecord } from "../integrations/lookup-service";
 import { resolveAddress, suggestFacts, type PropertyRecord } from "../integrations/rentcast";
 import type { AnalysisRow, Memo, Motivation, StoredResult } from "./types";
@@ -58,7 +59,7 @@ function memoData(f: DealFacts, a: Analysis, motivation: Motivation | null) {
   return {
     property: { name: f.name, location: [f.city, f.state].filter(Boolean).join(", "), type: PROPERTY_TYPE_LABELS[f.type], asking: f.list, arv: f.arv, repairs: f.rehab, monthlyRent: f.rentMonthly, noi: a.noi ? Math.round(a.noi) : null, noiEstimated: a.estimated, yearBuilt: f.yearBuilt, daysOnMarket: f.daysOnMarket, occupancy: f.occupancy },
     dealScore: a.score,
-    exits: a.exits.map((x) => ({ exit: x.name, score: x.score, keyNumber: x.metric, detail: x.sub })),
+    exits: a.exits.map((x) => ({ exit: x.name, score: x.score, keyNumber: x.metric, detail: x.sub, maxPrice: x.maxPrice ? Math.round(x.maxPrice) : null })),
     offerLadder: a.ladder,
     stress: a.stress ? { breakEvenOccupancy: fmtPct(a.stress.breakEven, 0), allThreeShocksDSCR: +a.stress.rows[4]!.dscr.toFixed(2) } : null,
     redFlags: a.flags.map((x) => x[1]),
@@ -134,6 +135,10 @@ export async function runAnalysis(ctx: Ctx, input: AnalyzeInput, pdf: Uint8Array
   for (const k of ["list", "rentMonthly", "noi", "arv", "rehab"] as const) if (input[k] != null) facts[k] = input[k]!;
   const motivation: Motivation | null = extracted.motivation ? { score: extracted.motivation.score, signals: extracted.motivation.signals, leverage: extracted.motivation.leverage } : null;
 
+  // Sanity-check what was read (typed numbers are trusted as entered).
+  const typed = new Set((["list", "rentMonthly", "noi", "arv", "rehab"] as const).filter((k) => input[k] != null));
+  Object.assign(facts, sanityCheck({ ...facts, checks: [] }, typed).facts);
+
   // 2. Compute (code only).
   const rules = await rulesFor(ctx);
   const a = analyze(facts, rules);
@@ -148,7 +153,12 @@ export async function runAnalysis(ctx: Ctx, input: AnalyzeInput, pdf: Uint8Array
         const r = await jsonFromClaude({ system: MEMO_SYSTEM, content: [{ type: "text", text: memoPrompt(memoData(facts, a, motivation)) }], schema: memoSchema, maxTokens: 3000 });
         tokensIn += r.usage.input;
         tokensOut += r.usage.output;
-        if (r.ok) memo = r.data;
+        if (r.ok) {
+          // Drop any sentence quoting a dollar figure the engine didn't compute or the listing didn't state.
+          const g = groundMemo(r.data, memoData(facts, a, motivation), memo);
+          if (g.dropped) console.warn(`memo: dropped ${g.dropped} ungrounded line(s)`);
+          memo = g.memo;
+        }
       } catch (e) {
         console.error("memo failed, using computed memo", e);
       }

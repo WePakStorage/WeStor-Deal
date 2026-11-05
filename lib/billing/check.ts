@@ -17,14 +17,33 @@ export async function checkStripeSetup(): Promise<StripeCheck[]> {
   const out: StripeCheck[] = [];
   const key = process.env.STRIPE_SECRET_KEY ?? "";
   if (!key) return [{ label: "Stripe secret key set", ok: false, fix: "Add STRIPE_SECRET_KEY in Vercel (Stripe → Developers → API keys → Secret key), then Redeploy." }];
-  const mode = key.startsWith("sk_live_") ? "live" : key.startsWith("sk_test_") ? "test/sandbox" : key.startsWith("rk_") ? "restricted" : "unknown";
+  // sk_ = full secret key, rk_ = restricted key; both come in _live_ and _test_ flavours.
+  const restricted = key.startsWith("rk_");
+  const mode = /^(sk|rk)_live_/.test(key) ? "live" : /^(sk|rk)_test_/.test(key) ? "test/sandbox" : "unknown";
+  const kind = restricted ? "restricted key" : "secret key";
 
   try {
-    await stripe().balance.retrieve();
-    out.push({ label: `Stripe secret key works (${mode} mode)`, ok: true, fix: "" });
+    // Reading prices needs only the Prices permission, so this works for restricted keys too.
+    await stripe().prices.list({ limit: 1 });
+    out.push({ label: `Stripe ${kind} works (${mode} mode)`, ok: true, fix: "" });
   } catch {
-    out.push({ label: "Stripe secret key works", ok: false, fix: "Stripe rejected STRIPE_SECRET_KEY. Copy the Secret key again (sk_test_… in the sandbox, sk_live_… for real payments) and Redeploy." });
+    out.push({
+      label: `Stripe ${kind} works`,
+      ok: false,
+      fix: restricted
+        ? "Stripe rejected the restricted key, or it can't read Prices. Use the standard Secret key (sk_live_…) instead, or give the restricted key the permissions listed in the README."
+        : "Stripe rejected STRIPE_SECRET_KEY. Copy the Secret key again (sk_test_… in the sandbox, sk_live_… for real payments) and Redeploy.",
+    });
     return out;
+  }
+  if (restricted) {
+    // A restricted key also needs write access to create checkouts and billing-portal sessions.
+    try {
+      await stripe().checkout.sessions.list({ limit: 1 });
+      out.push({ label: "Restricted key can manage Checkout", ok: true, fix: "" });
+    } catch {
+      out.push({ label: "Restricted key can manage Checkout", ok: false, fix: "Edit the restricted key in Stripe: Checkout Sessions → Write. Or use the standard Secret key (sk_live_…) instead." });
+    }
   }
 
   for (const plan of PAID_PLANS) {

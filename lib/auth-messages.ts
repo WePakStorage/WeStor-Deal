@@ -2,7 +2,8 @@
 export function authMessage(raw: string | undefined | null): string {
   const m = (raw ?? "").toLowerCase();
   if (!m) return "Something went wrong. Try again.";
-  if (m === "account_setup") return "You're signed in, but your account isn't set up yet. The site owner needs to run the database setup (supabase/migrations). Then sign in again.";
+  if (m === "session_unverified") return "You signed in, but the server couldn't confirm it. Open /status on this site to see which setting is missing, then sign in again.";
+  if (m === "account_setup") return "You're signed in, but your account isn't set up yet. The site owner needs to run the database setup (open /status on this site to see what's missing). Then sign in again.";
   if (m.includes("invalid login credentials")) return "Wrong email or password.";
   if (m.includes("email not confirmed")) return "Confirm your email first. Check your inbox for the link, or send it again below.";
   if (m.includes("user already registered") || m.includes("already been registered")) return "That email already has an account. Sign in instead.";

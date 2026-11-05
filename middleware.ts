@@ -52,7 +52,9 @@ export async function middleware(req: NextRequest) {
   if (!data.user && path.startsWith("/app")) {
     const to = req.nextUrl.clone();
     to.pathname = "/login";
-    to.search = `?next=${encodeURIComponent(path)}`;
+    // A session cookie the server can't verify means a configuration mismatch, not "signed out":
+    // say so instead of bouncing silently back to the login page.
+    to.search = hasSessionCookie ? `?error=session_unverified&next=${encodeURIComponent(path)}` : `?next=${encodeURIComponent(path)}`;
     return NextResponse.redirect(to);
   }
   // 2. Already signed in: skip the landing and login pages. (Not when /login is showing an error,

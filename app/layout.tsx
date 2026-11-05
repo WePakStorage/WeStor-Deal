@@ -9,11 +9,17 @@ import "@fontsource/ibm-plex-sans/latin-600.css";
 import "@fontsource/ibm-plex-sans/latin-700.css";
 import "./globals.css";
 import { Analytics } from "@/components/analytics";
+import { SITE_DESCRIPTION, SITE_URL } from "@/lib/site";
 
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: { default: "UndrIq: SI deal analyzer for real estate investors", template: "%s · UndrIq" },
   description: "Paste a listing, get a deal score, five exit strategies, an offer ladder and a ready-to-send offer in minutes. Residential, multifamily, storage, industrial and retail.",
+  applicationName: "UndrIq",
+  openGraph: { type: "website", siteName: "UndrIq", url: "/", title: "UndrIq: underwrite any deal in minutes", description: SITE_DESCRIPTION },
+  twitter: { card: "summary_large_image", title: "UndrIq: underwrite any deal in minutes", description: SITE_DESCRIPTION },
+  appleWebApp: { capable: true, title: "UndrIq", statusBarStyle: "black-translucent" },
 };
 
 export const viewport: Viewport = { themeColor: "#000000" };

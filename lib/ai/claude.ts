@@ -4,7 +4,32 @@ import type { z } from "zod";
 import { env } from "../env";
 
 let client: Anthropic | null = null;
-const anthropic = () => (client ??= new Anthropic());
+// 50 s per request with one retry keeps a full analysis inside Vercel's function time limit.
+const anthropic = () => (client ??= new Anthropic({ timeout: 50_000, maxRetries: 1 }));
+
+/** A plain-language reason the SI (Claude) step failed, safe to show to the account owner. */
+export function explainAiError(e: unknown): string {
+  const err = e as { status?: number; message?: string; error?: { error?: { message?: string } }; name?: string };
+  const msg = `${err?.error?.error?.message ?? ""} ${err?.message ?? ""}`.toLowerCase();
+  if (err?.status === 401 || msg.includes("api key") || msg.includes("authentication")) return "The Claude API key was rejected. Check ANTHROPIC_API_KEY in Vercel and redeploy.";
+  if (msg.includes("credit balance")) return "The Anthropic account is out of credits. Add credits at console.anthropic.com → Plans & Billing.";
+  if (err?.status === 404 || msg.includes("model")) return "The SI model name wasn't found. Check ANTHROPIC_MODEL in Vercel (use claude-sonnet-5-5).";
+  if (err?.status === 429) return "The Anthropic rate limit was hit. Try again in a minute.";
+  if (err?.status === 529 || msg.includes("overloaded")) return "The SI service is busy right now. Try again in a minute.";
+  if (err?.name?.includes("Timeout") || msg.includes("timed out") || msg.includes("timeout")) return "The SI step took too long. Try again, or paste less text.";
+  if (msg.includes("declined")) return "SI declined to read this document.";
+  return "The SI step failed unexpectedly. Try again; if it keeps happening, check Vercel → Logs.";
+}
+
+/** Tiny live call used by /status to prove the key, credits and model all work. */
+export async function pingClaude(): Promise<{ ok: true } | { ok: false; reason: string }> {
+  try {
+    await anthropic().messages.create({ model: env.anthropicModel, max_tokens: 5, messages: [{ role: "user", content: "Reply with: ok" }] });
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, reason: explainAiError(e) };
+  }
+}
 
 export interface ClaudeUsage {
   input: number;

@@ -2,7 +2,7 @@ import "server-only";
 import { z } from "zod";
 import { quotaWindowStart } from "../billing/plans";
 import { isAnthropicConfigured } from "../env";
-import { jsonFromClaude, pdfBlock } from "../ai/claude";
+import { explainAiError, jsonFromClaude, pdfBlock } from "../ai/claude";
 import { HttpError } from "../server/run";
 import type { Ctx } from "../server/context";
 import { ASSET_CLASSES, assetOf, PROPERTY_TYPE_LABELS, type AssetClass } from "./assets";
@@ -115,6 +115,9 @@ export async function runAnalysis(ctx: Ctx, input: AnalyzeInput, pdf: Uint8Array
   let extracted: Extracted = heuristicExtract(text);
   let tokensIn = 0;
   let tokensOut = 0;
+  // Track whether SI really ran, and why not, so a missing key or empty credits never fails silently.
+  let readBySi = false;
+  let siProblem: string | null = isAnthropicConfigured() ? null : "No Claude API key is set on the server, so SI is off. Add ANTHROPIC_API_KEY in Vercel and redeploy.";
   if (isAnthropicConfigured() && (pdf || text.length >= 40)) {
     const content = [
       ...(pdf ? [pdfBlock(pdf)] : []),
@@ -124,11 +127,16 @@ export async function runAnalysis(ctx: Ctx, input: AnalyzeInput, pdf: Uint8Array
       const r = await jsonFromClaude({ system: EXTRACT_SYSTEM, content, schema: extractedSchema, maxTokens: 4000 });
       tokensIn += r.usage.input;
       tokensOut += r.usage.output;
-      if (r.ok) extracted = mergeExtracted(r.data, extracted);
+      if (r.ok) {
+        extracted = mergeExtracted(r.data, extracted);
+        readBySi = true;
+      } else siProblem = "SI couldn't read this listing reliably, so the basic reader was used. Check the numbers.";
     } catch (e) {
       console.error("extract failed, using deterministic read", e);
+      siProblem = explainAiError(e);
     }
   }
+
 
   const typeHint = input.type && input.type in PROPERTY_TYPE_LABELS && assetOf(input.type) === asset ? input.type : null;
   const fallbackName = input.name?.trim() || link?.name || `${PROPERTY_TYPE_LABELS[typeHint ?? ""] ?? "Deal"}${link?.city ? ` in ${link.city}` : ""}`;
@@ -163,8 +171,8 @@ export async function runAnalysis(ctx: Ctx, input: AnalyzeInput, pdf: Uint8Array
   // 3. Write (AI, for full analyses only; numbers come from step 2).
   let memo: Memo | null = null;
   if (full) {
-    memo = fallbackMemo(a);
-    if (isAnthropicConfigured()) {
+    memo = { ...fallbackMemo(a), source: "basic", problem: siProblem };
+    if (isAnthropicConfigured() && !(siProblem && /key|credits|model/.test(siProblem))) {
       try {
         const r = await jsonFromClaude({ system: MEMO_SYSTEM, content: [{ type: "text", text: memoPrompt(memoData(facts, a, motivation)) }], schema: memoSchema, maxTokens: 3000 });
         tokensIn += r.usage.input;
@@ -173,10 +181,11 @@ export async function runAnalysis(ctx: Ctx, input: AnalyzeInput, pdf: Uint8Array
           // Drop any sentence quoting a dollar figure the engine didn't compute or the listing didn't state.
           const g = groundMemo(r.data, memoData(facts, a, motivation), memo);
           if (g.dropped) console.warn(`memo: dropped ${g.dropped} ungrounded line(s)`);
-          memo = g.memo;
-        }
+          memo = { ...g.memo, source: "si", problem: readBySi || !(pdf || text.length >= 40) ? null : siProblem };
+        } else memo = { ...memo, problem: siProblem ?? "SI couldn't write the memo this time; this one is built from the numbers." };
       } catch (e) {
         console.error("memo failed, using computed memo", e);
+        memo = { ...memo, problem: explainAiError(e) };
       }
     }
   }
@@ -194,7 +203,7 @@ export async function runAnalysis(ctx: Ctx, input: AnalyzeInput, pdf: Uint8Array
     score: a.score,
     facts,
     result,
-    memo: memo ?? { ...fallbackMemo(a), thesis: [], risks: [], nextSteps: [] },
+    memo: memo ?? { ...fallbackMemo(a), thesis: [], risks: [], nextSteps: [], source: readBySi ? "si" : "basic", problem: siProblem },
     motivation: full ? motivation : null,
     offers: [],
     notes: "",

@@ -100,6 +100,16 @@ export function ResultView(p: {
         </div>
       ) : null}
 
+      {memo?.problem ? (
+        <div role="alert" className="flex gap-3 rounded-2xl border border-amber/40 bg-amber/10 px-5 py-4 text-sm">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber" />
+          <div>
+            <div className="font-medium">SI didn&apos;t run on this deal, so these results come from the basic reader.</div>
+            <p className="mt-0.5 text-muted">{memo.problem}</p>
+          </div>
+        </div>
+      ) : null}
+
       {/* Hero */}
       <Card className="p-5 sm:p-7">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center">

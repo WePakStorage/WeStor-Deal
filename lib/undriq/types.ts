@@ -43,6 +43,10 @@ export interface Memo {
   killers: string[];
   mustBeTrue: string[];
   offerScript: string;
+  /** "si" when Claude read the listing and wrote the memo; "basic" when the deterministic fallback ran. */
+  source?: "si" | "basic";
+  /** Why SI didn't run (shown to the user so a broken key or empty credits never fails silently). */
+  problem?: string | null;
 }
 
 export interface Motivation {

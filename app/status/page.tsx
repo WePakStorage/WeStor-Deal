@@ -2,6 +2,16 @@ import Link from "next/link";
 import { BrandMark } from "@/components/shell/nav";
 import { env, isAnthropicConfigured, isDemoMode, isStripeConfigured } from "@/lib/env";
 import { supabaseAdmin, supabaseServer } from "@/lib/supabase/server";
+import { pingClaude } from "@/lib/ai/claude";
+
+// Live SI check result, cached briefly per server instance so reloading /status can't run up the bill.
+const g = globalThis as unknown as { __siPing?: { at: number; ok: boolean; reason?: string } };
+async function siWorks(): Promise<{ ok: boolean; reason?: string }> {
+  if (g.__siPing && Date.now() - g.__siPing.at < 10 * 60_000) return g.__siPing;
+  const r = await pingClaude();
+  g.__siPing = { at: Date.now(), ok: r.ok, reason: r.ok ? undefined : r.reason };
+  return g.__siPing;
+}
 
 export const metadata = { title: "Setup check" };
 export const dynamic = "force-dynamic";
@@ -65,7 +75,14 @@ export default async function StatusPage() {
       signedIn = false;
     }
   }
-  add("AI (Anthropic) key set", isAnthropicConfigured(), "Add ANTHROPIC_API_KEY in Vercel, then Redeploy.");
+  add("SI (Claude) key set", isAnthropicConfigured(), "Add ANTHROPIC_API_KEY in Vercel, then Redeploy.");
+  if (isAnthropicConfigured()) {
+    // Only signed-in visitors trigger the live test call.
+    if (signedIn) {
+      const si = await siWorks();
+      add("SI (Claude) answers a live test", si.ok, si.reason ?? "");
+    } else add("SI (Claude) answers a live test (sign in to run it)", null, "");
+  }
   add("Stripe set (needed only for paid plans)", isStripeConfigured(), "Add STRIPE_SECRET_KEY and the STRIPE_PRICE_* values in Vercel, then Redeploy.");
   add("RentCast set (needed only for property data)", Boolean(process.env.RENTCAST_API_KEY), "Add RENTCAST_API_KEY in Vercel, then Redeploy.");
 

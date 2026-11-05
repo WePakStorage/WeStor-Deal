@@ -55,16 +55,26 @@ export function viewFor(ctx: Ctx, row: AnalysisRow, rules: BuyBoxRules): { full:
   return { full: null, teaser: row.result.teaser };
 }
 
+const k1 = (v: number | null | undefined) => (v == null || !Number.isFinite(v) ? null : Math.round(v / 1000) * 1000);
+/** Drop null/empty fields so the memo doesn't ask for things that don't apply (e.g. ARV on a warehouse). */
+const compact = (o: Record<string, unknown>) => Object.fromEntries(Object.entries(o).filter(([, v]) => v != null && v !== "" && !(Array.isArray(v) && !v.length)));
+
 function memoData(f: DealFacts, a: Analysis, motivation: Motivation | null) {
-  return {
-    property: { name: f.name, location: [f.city, f.state].filter(Boolean).join(", "), type: PROPERTY_TYPE_LABELS[f.type], asking: f.list, arv: f.arv, repairs: f.rehab, monthlyRent: f.rentMonthly, noi: a.noi ? Math.round(a.noi) : null, noiEstimated: a.estimated, yearBuilt: f.yearBuilt, daysOnMarket: f.daysOnMarket, occupancy: f.occupancy },
+  return compact({
+    property: compact({
+      name: f.name, location: [f.city, f.state].filter(Boolean).join(", "), type: PROPERTY_TYPE_LABELS[f.type], asking: f.list, arv: f.arv, repairs: f.rehab,
+      monthlyRent: f.rentMonthly, noi: k1(a.noi), noiEstimated: a.estimated || null, yearBuilt: f.yearBuilt, daysOnMarket: f.daysOnMarket,
+      occupancy: f.occupancy != null ? fmtPct(f.occupancy, 0) : null, units: f.units, squareFeet: f.nrsf, leaseNote: f.leaseNote,
+    }),
     dealScore: a.score,
-    exits: a.exits.map((x) => ({ exit: x.name, score: x.score, keyNumber: x.metric, detail: x.sub, maxPrice: x.maxPrice ? Math.round(x.maxPrice) : null })),
+    verdict: a.verdict.text,
+    exits: a.exits.map((x) => ({ exit: x.name, score: x.score, keyNumber: x.metric, detail: x.sub, maxPrice: k1(x.maxPrice) })),
     offerLadder: a.ladder,
     stress: a.stress ? { breakEvenOccupancy: fmtPct(a.stress.breakEven, 0), allThreeShocksDSCR: +a.stress.rows[4]!.dscr.toFixed(2) } : null,
     redFlags: a.flags.map((x) => x[1]),
     sellerMotivation: motivation,
-  };
+    style: "Round dollar figures to the nearest thousand (e.g. $1.07M, $135K). Only mention inputs that appear in this data.",
+  });
 }
 
 /** Plain-language memo from the numbers alone, used when the AI is off or fails. */
@@ -137,7 +147,7 @@ export async function runAnalysis(ctx: Ctx, input: AnalyzeInput, pdf: Uint8Array
 
   // Sanity-check what was read (typed numbers are trusted as entered).
   const typed = new Set((["list", "rentMonthly", "noi", "arv", "rehab"] as const).filter((k) => input[k] != null));
-  Object.assign(facts, sanityCheck({ ...facts, checks: [] }, typed).facts);
+  Object.assign(facts, sanityCheck(facts, typed).facts);
 
   // 2. Compute (code only).
   const rules = await rulesFor(ctx);

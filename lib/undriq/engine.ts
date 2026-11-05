@@ -355,7 +355,7 @@ export function redFlags(f: DealFacts): Flag[] {
   if (f.yearBuilt && f.yearBuilt < 1980) out.push(["info", `Built ${f.yearBuilt}. Budget for roof, plumbing, electrical and deferred maintenance.`]);
   if (f.daysOnMarket && f.daysOnMarket > 90) out.push(["info", `${f.daysOnMarket} days on market. The seller may take less.`]);
   if (estimated) out.push(["info", "Income or expenses are estimated. Get the rent roll and T-12 before you lock a price."]);
-  if (f.leaseNote && /month|mtm|vacant|expir/i.test(f.leaseNote)) out.push(["warn", `Lease risk: ${f.leaseNote}.`]);
+  if (f.leaseNote && /month|mtm|vacant|expir/i.test(f.leaseNote)) out.push(["warn", `Lease risk: ${f.leaseNote.replace(/[.\s]+$/, "")}.`]);
   for (const c of f.checks ?? []) out.push(["info", c]);
   return out;
 }

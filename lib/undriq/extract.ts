@@ -30,6 +30,7 @@ export const extractedSchema = z.object({
   list: num,
   noi: num,
   rentMonthly: num,
+  marketRentMonthly: num,
   grossAnnual: num,
   expensesAnnual: num,
   statedCapPct: num,
@@ -65,7 +66,7 @@ export const memoSchema = z.object({
 });
 
 const FACTS_SHAPE = `{"name": string, "city": string|null, "state": "2-letter"|null, "type": ${JSON.stringify(Object.keys(PROPERTY_TYPE_LABELS).join("|"))},
- "list": number|null, "noi": number|null, "rentMonthly": number|null, "grossAnnual": number|null, "expensesAnnual": number|null, "statedCapPct": number|null,
+ "list": number|null, "noi": number|null, "rentMonthly": number|null, "marketRentMonthly": number|null, "grossAnnual": number|null, "expensesAnnual": number|null, "statedCapPct": number|null,
  "arv": number|null, "rehab": number|null, "nrsf": number|null, "units": number|null, "yearBuilt": number|null, "occupancyPct": number|null, "appraised": number|null,
  "daysOnMarket": number|null, "leaseNote": string|null,
  "motivation": {"score": 0-10, "signals": [up to 5 short phrases from the listing], "leverage": "one sentence on how to use them in the negotiation"},
@@ -78,7 +79,16 @@ export function extractPrompt(asset: AssetClass, link: ParsedLink | null, hasTex
     ? `Listing link: ${link.url} (${link.site}). You cannot open it. The link itself says: ${[link.street || link.name, link.city, link.state, link.zip].filter(Boolean).join(", ") || "no address"}.\n`
     : "";
   return `Extract the facts of one real estate listing. Asset class selected: ${ASSETS[asset].label}.
-${lk}Rules: use only numbers stated in the ${hasText ? "text" : "document"}. Money as plain numbers (no $ or commas). Annual NOI and expenses; monthly rent is the TOTAL for the property. Percentages as numbers (7.5 means 7.5%). If the text is a copied web page, ignore menus, ads, mortgage calculators and "similar homes" or "nearby listings": use only the subject property. Use null when a value isn't there. For a house, put a stated or estimated repair cost in rehab and an after-repair value or renovated comps in arv only if the text gives them. Score seller motivation from the listing language (price drops, days on market, as-is, estate, vacant, tired landlord, bring all offers).
+${lk}Rules:
+- Use only numbers stated in the ${hasText ? "text" : "document"}. Money as plain numbers (no $ or commas). Percentages as numbers (7.5 means 7.5%). Use null when a value isn't there.
+- list is the current asking price of the subject property, never a price cut amount, a comp, a "similar home" or a mortgage payment.
+- rentMonthly is the property's CURRENT total monthly rent (all units). If it is vacant or no current rent is given, use null.
+- marketRentMonthly is a stated market or area rent for the subject (total for all units). For a range, use the LOW end.
+- arv is the after-repair value: a stated ARV, or the sale prices of renovated comps. For a range, use the LOW end.
+- rehab is a stated or estimated repair cost (the total, not one item).
+- noi and expensesAnnual are annual. grossAnnual is annual gross or scheduled income.
+- If the text is a copied web page, ignore menus, ads, mortgage calculators and "similar homes" or "nearby listings".
+- Score seller motivation from the listing language (price drops, days on market, as-is, estate, vacant, tired landlord, bring all offers).
 Reply with only this JSON object:
 ${FACTS_SHAPE}`;
 }
@@ -114,7 +124,7 @@ export function factsFrom(x: Extracted, asset: AssetClass, typeHint: string | nu
     state: x.state,
     list: x.list,
     noi: x.noi,
-    rentMonthly: x.rentMonthly,
+    rentMonthly: x.rentMonthly ?? x.marketRentMonthly,
     gross: x.grossAnnual,
     expenses: x.expensesAnnual,
     statedCap: pct(x.statedCapPct),
@@ -127,17 +137,30 @@ export function factsFrom(x: Extracted, asset: AssetClass, typeHint: string | nu
     appraised: x.appraised,
     daysOnMarket: x.daysOnMarket,
     leaseNote: x.leaseNote,
+    checks: x.rentMonthly == null && x.marketRentMonthly != null ? ["Rent is the market rent from the listing (low end of the range), not a current lease."] : [],
   };
 }
 
 const MONEY = String.raw`\$?\s?(\d[\d,]*(?:\.\d+)?)\s?(k|m|mm|million)?\b`;
 function moneyAfter(text: string, labels: string): number | null {
-  const re = new RegExp(String.raw`(?:${labels})[^\d$\n]{0,24}` + MONEY, "i");
-  const m = text.match(re);
-  if (!m) return null;
-  const unit = (m[2] ?? "").toLowerCase();
-  const n = Number(m[1]!.replace(/,/g, "")) * (unit === "k" ? 1e3 : unit ? 1e6 : 1);
-  return Number.isFinite(n) && n > 0 ? n : null;
+  const re = new RegExp(String.raw`(?:${labels})([^\d$\n]{0,24})` + MONEY, "gi");
+  for (const m of text.matchAll(re)) {
+    // "Price cut: -$15,000" and "price reduced $10K" are changes, not prices.
+    if (/cut|drop|reduc|change|-\s*$/i.test(m[1] ?? "")) continue;
+    const raw = m[0];
+    const unit = (m[3] ?? "").toLowerCase();
+    const n = Number(m[2]!.replace(/,/g, "")) * (unit === "k" ? 1e3 : unit ? 1e6 : 1);
+    // Bare small numbers ("rents for 3/1.5") aren't money: need a $ sign or a unit.
+    if (!raw.includes("$") && !unit && n < 1000) continue;
+    if (Number.isFinite(n) && n > 0) return n;
+  }
+  return null;
+}
+/** A listing headline like "$139,900 · 3 bd" puts the price first. */
+function firstPrice(text: string): number | null {
+  const head = text.split("\n").slice(0, 4).join("\n");
+  const m = head.match(/\$\s?(\d{2,3}(?:,\d{3})+)(?!\s*\/\s*mo)/);
+  return m ? Number(m[1]!.replace(/,/g, "")) : null;
 }
 function numAfter(text: string, labels: string): number | null {
   const m = text.match(new RegExp(String.raw`(?:${labels})[^\d\n]{0,16}(\d[\d,]*(?:\.\d+)?)`, "i"));
@@ -164,9 +187,10 @@ export function heuristicExtract(text: string): Extracted {
     city: null,
     state: null,
     type: "",
-    list: moneyAfter(t, "asking price|list price|listed (?:at|for)|price|asking|offered at"),
+    list: moneyAfter(t, "asking price|list price|listed (?:at|for)|offered at|asking|price") ?? firstPrice(t),
     noi: moneyAfter(t, "net operating income|\\bnoi\\b"),
     rentMonthly: moneyAfter(t, "monthly rent|rent(?:s)? (?:of|at)|rents? for|gross rent(?:s)?/mo|rent/mo|total rent"),
+    marketRentMonthly: moneyAfter(t, "market rent|area rents?(?: for [^$\\n]{0,20})? run|rents? in the area|comparable rents?"),
     grossAnnual: moneyAfter(t, "gross (?:annual )?income|gross revenue|effective gross income|\\begi\\b|total income"),
     expensesAnnual: moneyAfter(t, "operating expenses|total expenses|\\bopex\\b|expenses"),
     statedCapPct: cap ? Number(cap[1]) : null,

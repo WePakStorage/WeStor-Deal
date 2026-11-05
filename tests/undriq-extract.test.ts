@@ -36,3 +36,22 @@ describe("extraction", () => {
     expect(f.name).toBe("Ranch");
   });
 });
+
+describe("listing-page pitfalls", () => {
+  const page = `FOR SALE - 4417 Brookhaven Dr, Memphis, TN 38118
+$139,900 · 3 bd · 1.5 ba · 1,320 sqft · Built 1968
+Price cut: -$15,000 (10/2). 104 days on Zillow.
+Seller estimates $38,000 in repairs. Area rents for 3/1.5 run $1,450-$1,550/mo.
+Mortgage calculator: est. $1,021/mo`;
+  it("doesn't take a price cut as the price or '3/1.5' as rent", () => {
+    const h = heuristicExtract(page);
+    expect(h.list).toBe(139_900);
+    expect(h.rentMonthly).toBeNull();
+    expect(h.marketRentMonthly).toBe(1_450);
+  });
+  it("uses market rent when there's no current rent, and says so", () => {
+    const f = factsFrom(extractedSchema.parse({ name: "x", list: 139900, marketRentMonthly: 1450 }), "residential", "sfr", "x");
+    expect(f.rentMonthly).toBe(1450);
+    expect(f.checks?.[0]).toMatch(/market rent/);
+  });
+});

@@ -14,10 +14,13 @@ const anthropic = () => (client ??= new Anthropic({ timeout: 45_000, maxRetries:
 
 const body = z.object({
   messages: z
-    .array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().trim().min(1).max(1200) }))
+    // Lenient on what arrives (long chats, long earlier replies); trimmed to budget below instead of rejected.
+    .array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(8000) }))
     .min(1)
-    .max(20),
+    .max(200),
 });
+const MAX_TURNS = 12;
+const MAX_CHARS = 1200;
 
 // Best-effort abuse guard for a public endpoint: per-IP message budget per server instance.
 const WINDOW_MS = 10 * 60_000;
@@ -48,10 +51,20 @@ export async function POST(req: Request) {
   const parsed = body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return text("Please send a shorter message.", 400);
   // Conversation must start with the visitor; the greeting shown in the widget isn't sent.
-  let history = parsed.data.messages.slice(-12);
+  let history = parsed.data.messages
+    .map((m) => ({ role: m.role, content: m.content.trim().slice(0, MAX_CHARS) }))
+    .filter((m) => m.content)
+    .slice(-MAX_TURNS);
   while (history.length && history[0]!.role !== "user") history = history.slice(1);
-  if (!history.length) return text("Please type a question.", 400);
-  const messages: Anthropic.Beta.BetaMessageParam[] = history.map((m) => ({ role: m.role, content: m.content }));
+  if (history.at(-1)?.role !== "user") return text("Please type a question.", 400);
+  // Roles must alternate; merge any back-to-back turns from the same side.
+  const merged: { role: "user" | "assistant"; content: string }[] = [];
+  for (const m of history) {
+    const last = merged.at(-1);
+    if (last && last.role === m.role) last.content += `\n\n${m.content}`;
+    else merged.push({ ...m });
+  }
+  const messages: Anthropic.Beta.BetaMessageParam[] = merged.map((m) => ({ role: m.role, content: m.content }));
 
   const stream = anthropic().beta.messages.stream({
     model: MODEL,

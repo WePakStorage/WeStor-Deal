@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger, useToast } from "@/components
 import { NumberInput } from "@/components/ui/number-input";
 import { useApp } from "@/components/shell/app-provider";
 import { ScoreRing, bandText } from "./score";
+import { PropertyRecordPanel } from "./property-record";
+import type { PropertyRecord } from "@/lib/integrations/rentcast";
 import { cn } from "@/lib/cn";
 import { deleteAnalysis, saveNotes, saveOffer, setOfferStatus, setStage } from "@/lib/actions/undriq";
 import { ASSETS, PROPERTY_TYPE_LABELS, type AssetClass } from "@/lib/undriq/assets";
@@ -42,6 +44,7 @@ export function ResultView(p: {
   buyers: BuyerFit[];
   offerDefaults: OfferTerms | null;
   customRules: boolean;
+  records: PropertyRecord | null;
 }) {
   const { row, facts, teaser, full, memo } = p;
   const { openUpgrade } = useApp();
@@ -115,6 +118,13 @@ export function ResultView(p: {
           <Kv label={full ? "Cap rate at asking" : "Red flags"} value={full ? fmtPct(full.atAsking?.cap ?? null) : String(teaser.flagsCount)} sub={full?.atAsking ? `${Number.isFinite(full.atAsking.dscr) ? full.atAsking.dscr.toFixed(2) : "—"}x DSCR` : undefined} />
         </dl>
       </Card>
+
+      {p.records ? (
+        <Card>
+          <CardHeader title="Property records" description={p.records.address} />
+          <PropertyRecordPanel record={p.records} />
+        </Card>
+      ) : null}
 
       {!full ? <LockedPreview onUpgrade={() => openUpgrade("Unlock the exit matrix, offer ladder, stress test, memo and the offer generator for this deal.")} /> : (
         <>

@@ -2,7 +2,9 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Check, FileUp, Link2, Loader2, X } from "lucide-react";
+import { ArrowRight, Check, Database, FileUp, Link2, Loader2, MapPin, X } from "lucide-react";
+import { PropertyRecordPanel } from "./property-record";
+import type { PropertyRecord, SuggestedFacts } from "@/lib/integrations/rentcast";
 import { ASSET_CLASSES, ASSETS, defaultType, type AssetClass } from "@/lib/undriq/assets";
 import { guessAsset, parseListingUrl, type ParsedLink } from "@/lib/undriq/linkparse";
 import { Button, Field, Input, Select, Textarea } from "@/components/ui/primitives";
@@ -13,7 +15,7 @@ import { cn } from "@/lib/cn";
 
 const STEPS = ["Reading the listing", "Running five exit strategies", "Stress testing the numbers", "Writing your memo"];
 
-export function AnalyzeForm({ left }: { left: number }) {
+export function AnalyzeForm({ left, lookupEnabled }: { left: number; lookupEnabled: boolean }) {
   const router = useRouter();
   const toast = useToast();
   const { plan, openUpgrade } = useApp();
@@ -25,6 +27,10 @@ export function AnalyzeForm({ left }: { left: number }) {
   const [file, setFile] = React.useState<File | null>(null);
   const [q, setQ] = React.useState({ name: "", city: "", state: "", list: "", rentMonthly: "", noi: "", arv: "", rehab: "" });
   const [busy, setBusy] = React.useState(false);
+  const [address, setAddress] = React.useState("");
+  const [record, setRecord] = React.useState<PropertyRecord | null>(null);
+  const [lookupNotes, setLookupNotes] = React.useState<string[]>([]);
+  const [looking, setLooking] = React.useState(false);
   const [step, setStep] = React.useState(0);
   const [err, setErr] = React.useState("");
 
@@ -41,10 +47,41 @@ export function AnalyzeForm({ left }: { left: number }) {
       const a = p.asset ?? guessAsset(p.url);
       if (a) pickAsset(a);
       setQ((x) => ({ ...x, name: x.name || p.name, city: x.city || p.city, state: x.state || p.state }));
+      if (p.street && /^\d/.test(p.street) && p.city && p.state) setAddress(`${p.street}, ${p.city}, ${p.state}${p.zip ? ` ${p.zip}` : ""}`);
     }
   };
 
-  const ready = text.trim().length >= 40 || !!file || !!q.list || !!q.rentMonthly || !!q.noi || !!q.arv;
+  const ready = text.trim().length >= 40 || !!file || !!q.list || !!q.rentMonthly || !!q.noi || !!q.arv || !!record;
+
+  async function pull() {
+    setErr("");
+    if (!address.trim()) return setErr("Enter the property address, or paste a Zillow, Redfin or Realtor.com link.");
+    setLooking(true);
+    try {
+      const res = await fetch("/api/property-lookup", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ address, asset }) });
+      const body = (await res.json().catch(() => ({}))) as { record?: PropertyRecord; suggested?: SuggestedFacts; error?: string; cached?: boolean };
+      if (res.status === 402) return openUpgrade(body.error);
+      if (!res.ok || !body.record) throw new Error(body.error || `Property lookup didn't finish (code ${res.status}).`);
+      const r = body.record;
+      const sug = body.suggested;
+      setRecord(r);
+      setLookupNotes(sug?.notes ?? []);
+      const fill = (v: number | null | undefined) => (v != null ? String(Math.round(v)) : "");
+      setQ((x) => ({
+        ...x,
+        name: x.name || address.split(",")[0]!.trim(),
+        city: x.city || address.split(",")[1]?.trim() || "",
+        list: x.list || fill(sug?.list),
+        rentMonthly: x.rentMonthly || fill(sug?.rentMonthly),
+        arv: x.arv || fill(sug?.arv),
+      }));
+      toast(r.property || r.value || r.listing ? `Property data loaded${body.cached ? " (saved copy, no charge)" : ""}` : "No records found for that address", r.property || r.value || r.listing ? undefined : "error");
+    } catch (e2) {
+      setErr((e2 as Error).message);
+    } finally {
+      setLooking(false);
+    }
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -56,7 +93,7 @@ export function AnalyzeForm({ left }: { left: number }) {
     const timer = window.setInterval(() => setStep((s) => Math.min(STEPS.length - 1, s + 1)), 2600);
     track("analysis_started", { asset, hasFile: !!file, hasLink: !!link });
     try {
-      const payload = { asset, type, link: link?.url, text: text.trim() || undefined, ...Object.fromEntries(Object.entries(q).filter(([, v]) => v.trim())) };
+      const payload = { asset, type, link: link?.url, address: record && address.trim() ? address.trim() : undefined, text: text.trim() || undefined, ...Object.fromEntries(Object.entries(q).filter(([, v]) => v.trim())) };
       let res: Response;
       if (file) {
         const fd = new FormData();
@@ -135,7 +172,24 @@ export function AnalyzeForm({ left }: { left: number }) {
         </Field>
       </div>
 
-      <Field label="Listing text or OM summary" htmlFor="text" hint="Open the listing, select all (Ctrl/Cmd+A), copy and paste here. Menus and ads are ignored.">
+      {lookupEnabled ? (
+        <div className="rounded-xl border border-line p-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+            <Field label="Property address" htmlFor="addr" hint="Pulls beds, baths, square feet, year built, last sale, taxes, value and rent estimates, comps and the active listing from public records and MLS data." className="flex-1">
+              <div className="relative">
+                <MapPin className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
+                <Input id="addr" className="pl-9" placeholder="1234 Main St, Memphis, TN 38118" value={address} onChange={(e) => { setAddress(e.target.value); setRecord(null); }} disabled={busy || looking} />
+              </div>
+            </Field>
+            <Button type="button" variant="secondary" onClick={pull} disabled={busy || looking} className="sm:mb-6">
+              {looking ? <Loader2 className="animate-spin" /> : <Database />} {looking ? "Pulling…" : "Pull property data"}
+            </Button>
+          </div>
+          {record ? <PropertyRecordPanel record={record} notes={lookupNotes} compact /> : null}
+        </div>
+      ) : null}
+
+      <Field label="Listing text or OM summary" htmlFor="text" hint="Optional with property data. Paste the listing description for repairs, seller notes and income details. Menus and ads are ignored.">
         <Textarea id="text" rows={7} placeholder="Paste the full listing: price, beds/units, rent, NOI, repairs, days on market…" value={text} onChange={(e) => setText(e.target.value)} disabled={busy} />
       </Field>
 

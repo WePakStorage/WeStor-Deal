@@ -7,6 +7,7 @@ import { timeAgo } from "@/lib/format";
 import { requireContext } from "@/lib/server/context";
 import { ASSETS } from "@/lib/undriq/assets";
 import { quotaFor } from "@/lib/undriq/service";
+import { isRentcastConfigured } from "@/lib/integrations/lookup-service";
 import { ANALYSIS_STAGE_LABEL } from "@/lib/undriq/types";
 
 export const metadata = { title: "Analyze a deal" };
@@ -28,10 +29,10 @@ export default async function AnalyzePage() {
           </p>
         </div>
         <Card className="p-5 sm:p-6">
-          <AnalyzeForm left={usage.left} />
+          <AnalyzeForm left={usage.left} lookupEnabled={isRentcastConfigured()} />
         </Card>
         <p className="mt-3 flex items-center gap-1.5 text-xs text-muted">
-          <ShieldCheck className="size-3.5" /> Every number is computed by code, not guessed by AI. UndrIq never scrapes listing sites; it reads only what you paste or upload.
+          <ShieldCheck className="size-3.5" /> Every number is computed by code, not guessed by AI. UndrIq never scrapes listing sites: property data comes from licensed records looked up by address.
         </p>
       </div>
 

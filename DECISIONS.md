@@ -75,3 +75,10 @@ Choices made where the spec was silent or ambiguous. Each one is the simplest op
 - **No scraping.** A listing URL only pre-fills the address from its own path.
 - **Fixed a pre-existing bug** in `seed_org()`: it inserted a Postgres array into the `jsonb` expenses column, which would have failed every sign-up. `scripts/gen-seed-sql.mts` now writes JSON, and migration 0004 re-creates the function for databases that already ran 0002.
 - Migrations were tested against Postgres 16 with a stub of Supabase's `auth` schema: privacy between spaces, blocked escalation attempts (profile/org column updates, direct membership inserts, subscription writes), seat limits, leaving, downgrade and Fund-only buy box.
+
+## Property data (RentCast)
+- **Why not Zillow:** Zillow's terms forbid scraping and its API is limited to approved partners. RentCast is licensed public-record, MLS and estimate data looked up by address, so a pasted Zillow link only supplies the address.
+- **Server-trusted:** the browser never sends property numbers to the analysis. `/api/analyze` re-reads the record from the server cache by address, so a user can't inject fake data.
+- **Conservative fill:** asking price only from an active listing; rent only for single-unit homes (RentCast's rent estimate is per unit); the value estimate is offered as ARV for houses with a note that it assumes typical condition. Anything read from the listing text or typed by the user wins over records.
+- **Cost control:** shared 30-day cache by normalized address (service role only), an app-wide monthly call cap (`RENTCAST_MONTHLY_CALLS`), and per-space lookups capped at the plan's analysis allowance. Cache hits are free.
+- **Privacy:** owner type and owner-occupied are kept; owner names are dropped. Listing agent name, phone and email are kept because they are published for exactly this purpose (sending an offer).

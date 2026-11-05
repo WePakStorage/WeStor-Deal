@@ -9,6 +9,8 @@ import { ASSET_CLASSES, assetOf, PROPERTY_TYPE_LABELS, type AssetClass } from ".
 import { analyze, DEFAULT_RULES, fmtPct, normalizeRules, teaser, type Analysis, type BuyBoxRules, type DealFacts } from "./engine";
 import { EXTRACT_SYSTEM, extractedSchema, extractPrompt, factsFrom, heuristicExtract, MEMO_SYSTEM, memoPrompt, memoSchema, mergeExtracted, toNumber, type Extracted } from "./extract";
 import { parseListingUrl } from "./linkparse";
+import { cachedRecord } from "../integrations/lookup-service";
+import { resolveAddress, suggestFacts, type PropertyRecord } from "../integrations/rentcast";
 import type { AnalysisRow, Memo, Motivation, StoredResult } from "./types";
 
 const optNum = z.preprocess(toNumber, z.number().nonnegative().nullable()).optional();
@@ -19,6 +21,8 @@ export const analyzeInput = z.object({
   link: z.string().max(2000).optional(),
   text: z.string().max(60_000).optional(),
   name: z.string().max(140).optional(),
+  /** Street address for the property-data lookup ("1234 Main St, Memphis, TN 38118"). */
+  address: z.string().max(200).optional(),
   city: z.string().max(80).optional(),
   state: z.string().max(2).optional(),
   // Quick numbers typed by the user always win over anything read from the listing.
@@ -88,8 +92,11 @@ export async function runAnalysis(ctx: Ctx, input: AnalyzeInput, pdf: Uint8Array
   const asset: AssetClass = input.asset;
   const link = input.link ? parseListingUrl(input.link) : null;
   const text = (input.text ?? "").trim();
+  // Property data comes only from the server-side cache filled by /api/property-lookup.
+  const addr = resolveAddress(input.address, input.link);
+  const records: PropertyRecord | null = addr ? await cachedRecord(addr) : null;
   const hasQuick = [input.list, input.rentMonthly, input.noi, input.arv].some((v) => v != null);
-  if (!pdf && text.length < 40 && !hasQuick) throw new HttpError(400, "Paste the listing text, upload the OM, or type the price and rent.");
+  if (!pdf && text.length < 40 && !hasQuick && !records) throw new HttpError(400, "Paste the listing text, upload the OM, pull the property data, or type the price and rent.");
 
   // 1. Read (AI, with the deterministic read filling gaps). Numbers are never invented.
   let extracted: Extracted = heuristicExtract(text);
@@ -116,6 +123,14 @@ export async function runAnalysis(ctx: Ctx, input: AnalyzeInput, pdf: Uint8Array
   if (input.name?.trim()) facts.name = input.name.trim();
   facts.city = input.city?.trim() || facts.city || link?.city || null;
   facts.state = input.state?.trim().toUpperCase() || facts.state || link?.state || null;
+  if (records) {
+    // Records fill gaps only; anything read from the listing or typed by the user wins.
+    const sug = suggestFacts(records, asset);
+    for (const k of ["list", "rentMonthly", "arv", "yearBuilt", "nrsf", "units", "daysOnMarket"] as const) if (facts[k] == null && sug[k] != null) facts[k] = sug[k];
+    if (!input.name?.trim() && !extracted.name && addr) facts.name = addr.street;
+    facts.city ??= addr?.city ?? null;
+    facts.state ??= addr?.state ?? null;
+  }
   for (const k of ["list", "rentMonthly", "noi", "arv", "rehab"] as const) if (input[k] != null) facts[k] = input[k]!;
   const motivation: Motivation | null = extracted.motivation ? { score: extracted.motivation.score, signals: extracted.motivation.signals, leverage: extracted.motivation.leverage } : null;
 
@@ -157,5 +172,6 @@ export async function runAnalysis(ctx: Ctx, input: AnalyzeInput, pdf: Uint8Array
     motivation: ctx.plan.features.fullAnalysis ? motivation : null,
     offers: [],
     notes: "",
+    records,
   });
 }

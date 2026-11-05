@@ -2,6 +2,7 @@ import type { Plan } from "../types";
 import type { AssetClass } from "./assets";
 import type { Analysis, DealFacts, Teaser } from "./engine";
 import type { OfferStatus, OfferTerms } from "./offers";
+import type { PropertyRecord } from "../integrations/rentcast";
 
 export type SpaceKind = "personal" | "team";
 
@@ -78,6 +79,8 @@ export interface AnalysisRow {
   motivation: Motivation | null;
   offers: SavedOffer[];
   notes: string;
+  /** Property data (RentCast) the analysis used, if any. */
+  records?: PropertyRecord | null;
   created_at: string;
   updated_at: string;
 }

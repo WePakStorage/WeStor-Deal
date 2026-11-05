@@ -1,6 +1,6 @@
 import type { AnalysisRow, NewAnalysis, Space, SpaceMember } from "../undriq/types";
 
-export type UsageKind = "analysis" | "om_parse" | "doc_generate" | "alert_parse";
+export type UsageKind = "analysis" | "om_parse" | "doc_generate" | "alert_parse" | "property_lookup";
 export type InviteResult = "added" | "invited" | "already";
 
 /**

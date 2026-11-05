@@ -37,7 +37,7 @@ export default function Landing() {
               UndrIq is the AI acquisitions analyst for investors and wholesalers. Paste a listing and get a deal score, five exit strategies, your offer ladder and a ready-to-send offer.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Button asChild size="lg"><Link href="/login">Start free with 2 analyses <ArrowRight /></Link></Button>
+              <Button asChild size="lg"><Link href="/login?mode=signup">Start free with 2 analyses <ArrowRight /></Link></Button>
               <Button asChild size="lg" variant="secondary"><Link href="/pricing">See pricing</Link></Button>
             </div>
             <p className="mt-3 text-xs text-muted">Sign up with your email. No card needed.</p>

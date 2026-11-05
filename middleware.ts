@@ -28,4 +28,4 @@ export async function middleware(req: NextRequest) {
   return res;
 }
 
-export const config = { matcher: ["/app/:path*", "/auth/:path*", "/login"] };
+export const config = { matcher: ["/app/:path*", "/auth/:path*", "/login", "/reset-password"] };

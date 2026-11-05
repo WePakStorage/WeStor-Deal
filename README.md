@@ -19,10 +19,13 @@ With no Supabase keys, the app runs on an in-memory store. Without an Anthropic 
 
 ## Going live
 
-1. **Supabase**: create a project, then run the migrations in `supabase/migrations` (`supabase db push`, or paste them into the SQL editor in order).
-   - Auth → Providers: enable Email (magic link) and Google.
-   - Auth → URL configuration: add `https://YOUR_DOMAIN/auth/callback`.
-   - The migration creates the private `deal-files` storage bucket.
+1. **Supabase** (database and sign-in):
+   - Create a project. In **SQL Editor**, run every file in `supabase/migrations` in order (0001 → 0005).
+   - **Authentication → Sign In / Providers → Email**: on, with **Confirm email** on. Set the minimum password length to 8.
+   - **Authentication → URL Configuration**: Site URL = `https://YOUR_DOMAIN`; Redirect URLs = `https://YOUR_DOMAIN/auth/callback` (add `http://localhost:3000/auth/callback` for local dev).
+   - **Authentication → Emails → SMTP**: add your own sender (e.g. Resend SMTP). Supabase's built-in sender only sends a few emails an hour, which isn't enough for sign-up confirmations and password resets in production.
+   - Optional: Google provider for "Continue with Google".
+   - The migrations create the private `deal-files` storage bucket and, on every sign-up, a private space for the new user.
 2. **Stripe** (test mode first): create three monthly prices (Investor $49, Firm $149, Fund $399) and put their IDs in `STRIPE_PRICE_INVESTOR`, `STRIPE_PRICE_FIRM` and `STRIPE_PRICE_FUND`. Subscriptions attach to the buyer's private space; their Firm or Fund plan powers every team they own. Add a webhook to `https://YOUR_DOMAIN/api/stripe/webhook` for `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted` and `invoice.payment_failed`. Turn on the customer portal (allow cancel, card update and switching between the three prices).
 3. **RentCast** (property data): set `RENTCAST_API_KEY` and, to match your RentCast plan, `RENTCAST_MONTHLY_CALLS` (default 50 = the free tier). Run migration `0005`. Users paste a Zillow/Redfin/Realtor.com link or type an address and click **Pull property data**; UndrIq looks the ADDRESS up in RentCast (it never touches the listing site). Each new address costs up to 4 API calls and is cached for 30 days; lookups count against the plan's analysis allowance.
 4. **Anthropic**: set `ANTHROPIC_API_KEY`. `ANTHROPIC_MODEL` defaults to `claude-sonnet-5-5`.

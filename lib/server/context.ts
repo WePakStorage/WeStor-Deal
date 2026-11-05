@@ -69,11 +69,17 @@ export const getContext = cache(async (): Promise<Ctx | null> => {
   };
 });
 
-/** For pages: redirect to /login when signed out. */
+/** For pages: redirect to /login when signed out, with a clear message if the account exists but isn't set up. */
 export async function requireContext(): Promise<Ctx> {
   const ctx = await getContext();
-  if (!ctx) redirect("/login");
-  return ctx;
+  if (ctx) return ctx;
+  if (!isDemoMode()) {
+    const sb = await supabaseServer();
+    const { data } = await sb.auth.getUser();
+    // Signed in but no profile/space: the database migrations haven't run, or the sign-up trigger failed.
+    if (data.user) redirect("/login?error=account_setup");
+  }
+  redirect("/login");
 }
 
 /** Store for unauthenticated server paths (webhooks, inbound email). */

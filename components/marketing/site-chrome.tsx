@@ -10,7 +10,7 @@ export function SiteHeader() {
         <nav className="flex items-center gap-1 sm:gap-2">
           <Link href="/pricing" className="rounded-md px-3 py-2 text-sm text-muted hover:text-text">Pricing</Link>
           <Link href="/login" className="hidden rounded-md px-3 py-2 text-sm text-muted hover:text-text sm:block">Sign in</Link>
-          <Button asChild size="sm"><Link href="/login">Start free</Link></Button>
+          <Button asChild size="sm"><Link href="/login?mode=signup">Start free</Link></Button>
         </nav>
       </div>
     </header>

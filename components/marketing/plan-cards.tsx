@@ -40,7 +40,7 @@ export function PlanCards() {
               ))}
             </ul>
             <Button asChild size="lg" variant={dark ? "secondary" : id === "free" ? "secondary" : "primary"} className={cn("mt-6 w-full", dark && "!bg-ink !text-text")}>
-              <Link href={id === "free" ? "/login" : `/login?next=${encodeURIComponent(`/app/settings?tab=billing&plan=${id}`)}`}>{id === "free" ? "Start free" : `Choose ${p.name}`}</Link>
+              <Link href={id === "free" ? "/login?mode=signup" : `/login?next=${encodeURIComponent(`/app/settings?tab=billing&plan=${id}`)}`}>{id === "free" ? "Start free" : `Choose ${p.name}`}</Link>
             </Button>
           </div>
         );

@@ -12,10 +12,17 @@ import { useToast } from "@/components/ui/interactive";
 import { useApp } from "@/components/shell/app-provider";
 import { track } from "@/components/analytics";
 import { cn } from "@/lib/cn";
+import { supabaseBrowser } from "@/lib/supabase/browser";
 
 const STEPS = ["Reading the listing", "Running five exit strategies", "Stress testing the numbers", "Writing your memo"];
 
-export function AnalyzeForm({ left, lookupEnabled }: { left: number; lookupEnabled: boolean }) {
+/** Size limits: straight-to-storage uploads (live site) vs inline uploads (demo mode, Vercel's 4.5 MB request cap). */
+const MAX_STORAGE_PDF = 20 * 1024 * 1024;
+const MAX_INLINE_PDF = 4 * 1024 * 1024;
+
+export function AnalyzeForm({ left, lookupEnabled, uploadFolder }: { left: number; lookupEnabled: boolean; uploadFolder: string | null }) {
+  const maxPdf = uploadFolder ? MAX_STORAGE_PDF : MAX_INLINE_PDF;
+  const maxPdfLabel = `${Math.round(maxPdf / 1024 / 1024)} MB`;
   const router = useRouter();
   const toast = useToast();
   const { plan, openUpgrade } = useApp();
@@ -95,7 +102,13 @@ export function AnalyzeForm({ left, lookupEnabled }: { left: number; lookupEnabl
     try {
       const payload = { asset, type, link: link?.url, address: record && address.trim() ? address.trim() : undefined, text: text.trim() || undefined, ...Object.fromEntries(Object.entries(q).filter(([, v]) => v.trim())) };
       let res: Response;
-      if (file) {
+      if (file && uploadFolder) {
+        // Large OMs go straight from the browser to private storage, then the server reads them from there.
+        const path = `${uploadFolder}/uploads/${crypto.randomUUID()}.pdf`;
+        const up = await supabaseBrowser().storage.from("deal-files").upload(path, file, { contentType: "application/pdf", upsert: false });
+        if (up.error) throw new Error(`The PDF didn't upload (${up.error.message}). Try again, or paste the listing text.`);
+        res = await fetch("/api/analyze", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...payload, pdfPath: path }) });
+      } else if (file) {
         const fd = new FormData();
         fd.set("payload", JSON.stringify(payload));
         fd.set("file", file);
@@ -196,11 +209,11 @@ export function AnalyzeForm({ left, lookupEnabled }: { left: number; lookupEnabl
       <div className="flex flex-wrap items-center gap-3">
         <label className={cn("inline-flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-line px-3 py-2 text-sm text-muted hover:border-muted hover:text-text", busy && "pointer-events-none opacity-50")}>
           <FileUp className="size-4" />
-          {file ? file.name : "Upload OM or flyer (PDF, up to 4 MB)"}
+          {file ? `${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB)` : `Upload OM or flyer (PDF, up to ${maxPdfLabel})`}
           <input type="file" accept="application/pdf" className="sr-only" onChange={(e) => {
             const f = e.target.files?.[0] ?? null;
-            if (f && f.size > 4 * 1024 * 1024) {
-              setErr("That PDF is over 4 MB. Upload a smaller version (most PDF tools can compress it) or paste the listing text.");
+            if (f && f.size > maxPdf) {
+              setErr(`That PDF is over ${maxPdfLabel}. Upload a smaller version (most PDF tools can compress it) or paste the listing text.`);
               e.target.value = "";
               return;
             }

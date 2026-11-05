@@ -35,7 +35,7 @@ export default async function AnalyzePage({ searchParams }: { searchParams: Prom
           </p>
         </div>
         <Card className="p-5 sm:p-6">
-          <AnalyzeForm left={usage.left} lookupEnabled={isRentcastConfigured()} />
+          <AnalyzeForm left={usage.left} lookupEnabled={isRentcastConfigured()} uploadFolder={ctx.demo ? null : orgId} />
         </Card>
         <p className="mt-3 flex items-center gap-1.5 text-xs text-muted">
           <ShieldCheck className="size-3.5" /> SI reads the listing and writes the memo; every number is computed by tested code. UndrIq never scrapes listing sites: property data comes from licensed records looked up by address.

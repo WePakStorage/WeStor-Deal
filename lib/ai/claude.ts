@@ -4,8 +4,8 @@ import type { z } from "zod";
 import { env } from "../env";
 
 let client: Anthropic | null = null;
-// 50 s per request with one retry keeps a full analysis inside Vercel's function time limit.
-const anthropic = () => (client ??= new Anthropic({ timeout: 50_000, maxRetries: 1 }));
+// Large OMs can take SI a minute or more to read; one retry on transient errors.
+const anthropic = () => (client ??= new Anthropic({ timeout: 110_000, maxRetries: 1 }));
 
 /** A plain-language reason the SI (Claude) step failed, safe to show to the account owner. */
 export function explainAiError(e: unknown): string {
@@ -18,6 +18,8 @@ export function explainAiError(e: unknown): string {
   if (err?.status === 529 || msg.includes("overloaded")) return "The SI service is busy right now. Try again in a minute.";
   if (err?.name?.includes("Timeout") || msg.includes("timed out") || msg.includes("timeout")) return "The SI step took too long. Try again, or paste less text.";
   if (msg.includes("declined")) return "SI declined to read this document.";
+  if (msg.includes("page") && (msg.includes("exceed") || msg.includes("limit") || msg.includes("maximum"))) return "This PDF has too many pages for SI to read in one go. Upload the summary pages (financials, rent roll, property details) or paste the listing text.";
+  if (err?.status === 413 || msg.includes("too large") || msg.includes("request size")) return "This PDF is too large for SI. Compress it (most PDF tools can) or upload just the key pages.";
   return "The SI step failed unexpectedly. Try again; if it keeps happening, check Vercel → Logs.";
 }
 

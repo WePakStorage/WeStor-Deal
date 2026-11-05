@@ -102,6 +102,6 @@ Choices made where the spec was silent or ambiguous. Each one is the simplest op
 - **Buyers** cover every UndrIq property type; size range is plain square feet.
 - **Settings** is now plan & billing, account, and a pointer to Team.
 - **CSV export** of the pipeline replaces the storage-deal export; CSV cells are guarded against spreadsheet formula injection.
-- **PDF uploads capped at 4 MB** because Vercel rejects request bodies over 4.5 MB.
+- **PDF uploads up to 20 MB:** the browser uploads straight to the private `deal-files` Supabase bucket (folder = active space, enforced by storage RLS), the server reads and deletes it, then sends it to SI. This bypasses Vercel's 4.5 MB request limit; 20 MB keeps the base64 request under Claude's 32 MB cap. Demo mode (no storage) stays at 4 MB inline.
 - **"SI" branding:** customer-facing copy says SI (defined as Super Intelligence technology on the landing page) at the owner's request. The privacy policy keeps "AI provider" because it is a legal disclosure. Code identifiers are unchanged.
 - ESLint (flat config, `next/core-web-vitals` + `next/typescript`) runs clean; unused packages removed (dnd-kit, react-pdf, leaflet, recharts, resend).

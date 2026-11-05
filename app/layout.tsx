@@ -1,12 +1,15 @@
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Sans, Inter_Tight } from "next/font/google";
+// Brand type (matches the ads), self-hosted so builds never depend on Google Fonts:
+// Inter Tight extra-bold for headlines and big numbers; IBM Plex Sans for UI text and the
+// wordmark, because its serifed capital I keeps "UndrIq" from reading as "Undrlq".
+import "@fontsource-variable/inter-tight/wght.css";
+import "@fontsource/ibm-plex-sans/latin-400.css";
+import "@fontsource/ibm-plex-sans/latin-500.css";
+import "@fontsource/ibm-plex-sans/latin-600.css";
+import "@fontsource/ibm-plex-sans/latin-700.css";
 import "./globals.css";
 import { Analytics } from "@/components/analytics";
 
-// Brand type (matches the ads): Inter Tight extra-bold for headlines and big numbers.
-// IBM Plex Sans for UI text and the wordmark: its capital I has serifs, so "UndrIq" never reads as "Undrlq".
-const body = IBM_Plex_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-body", display: "swap" });
-const display = Inter_Tight({ subsets: ["latin"], weight: ["600", "700", "800"], variable: "--font-display-face", display: "swap" });
 
 export const metadata: Metadata = {
   title: { default: "UndrIq: SI deal analyzer for real estate investors", template: "%s · UndrIq" },
@@ -19,7 +22,7 @@ const themeScript = `try{var t=localStorage.getItem('undriq-theme');if(t)documen
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${body.variable} ${display.variable}`} suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>

@@ -9,8 +9,13 @@ import { track } from "@/components/analytics";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
-/** Photo for Jake: set NEXT_PUBLIC_ASSISTANT_AVATAR_URL to a stock photo you're licensed to use, or add /public/jake.jpg. */
-const AVATAR_URL = process.env.NEXT_PUBLIC_ASSISTANT_AVATAR_URL || "/jake.jpg";
+/**
+ * Photo for Jake: an original, AI-generated portrait of a fictional person (Higgsfield), so no likeness or stock rights apply.
+ * Override with NEXT_PUBLIC_ASSISTANT_AVATAR_URL (e.g. /jake.jpg in /public). Falls back to a "J" monogram if it fails to load.
+ */
+const DEFAULT_AVATAR =
+  "https://d8j0ntlcm91z4.cloudfront.net/user_3280cH750FM1GDR0ZgqNstOc0Qr/hf_20261105_181502_201d4aec-23ff-48fa-be8e-5f22d79470f5_min.webp";
+const AVATAR_URL = process.env.NEXT_PUBLIC_ASSISTANT_AVATAR_URL || DEFAULT_AVATAR;
 
 /** Round avatar with a monogram fallback if the photo is missing or fails to load. */
 function Avatar({ size = 32 }: { size?: number }) {

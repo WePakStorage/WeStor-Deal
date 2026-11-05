@@ -35,7 +35,14 @@ export async function startCheckout(tier: PaidPlan = "investor"): Promise<Action
       line_items: [{ price: priceIdFor(plan), quantity: 1 }],
       client_reference_id: personalOrgId,
       metadata: { org_id: personalOrgId, plan },
-      subscription_data: { metadata: { org_id: personalOrgId, plan }, ...(trialDays > 0 && PLANS[plan].trialDays > 0 ? { trial_period_days: trialDays } : {}) },
+      subscription_data: {
+        metadata: { org_id: personalOrgId, plan },
+        ...(trialDays > 0 && PLANS[plan].trialDays > 0
+          ? // Card is collected up front; if it's somehow missing at trial end, cancel instead of leaving an unpaid subscription.
+            { trial_period_days: trialDays, trial_settings: { end_behavior: { missing_payment_method: "cancel" as const } } }
+          : {}),
+      },
+      payment_method_collection: "always",
       ...(sub.stripe_customer_id ? { customer: sub.stripe_customer_id } : { customer_email: user.email }),
       allow_promotion_codes: true,
       success_url: `${env.appUrl}/app/settings?tab=billing&checkout=success`,

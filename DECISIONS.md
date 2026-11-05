@@ -89,3 +89,9 @@ Choices made where the spec was silent or ambiguous. Each one is the simplest op
 - **Buy box rules moved from Fund to Firm**; team-space count follows the plan (Firm 1, Fund 3). Enforced in `create_team()` / `set_buy_box()` (migration 0006) and mirrored in the demo store.
 - **7-day free trial** on Investor and Firm, only on a person's first subscription (no repeat trials). `STRIPE_TRIAL_DAYS` overrides; `trialing` already counts as paid.
 - **Safety fix:** `profiles.org_id` (the active-space pointer) is now `on delete set null`, so deleting a space can never delete a profile; `auth_org_id()` falls back to the personal space.
+
+## Stripe review (November 2026)
+- Subscription events re-read the subscription from Stripe before syncing, because Stripe doesn't guarantee event order; a late, stale event can't roll a plan back.
+- `invoice.paid` re-syncs so a recovered payment clears `past_due` immediately.
+- Trials collect a card up front (`payment_method_collection: always`) and cancel if no payment method exists at trial end.
+- Known gap: two checkouts opened at nearly the same moment could create two subscriptions. The button disables while pending and existing subscribers are routed to the portal; revisit if it shows up in practice.

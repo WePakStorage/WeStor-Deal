@@ -38,19 +38,24 @@ export async function POST(req: Request) {
       }
       break;
     }
+    case "customer.subscription.created":
     case "customer.subscription.updated":
     case "customer.subscription.deleted": {
-      const sub = event.data.object;
-      const orgId = await orgFor(sub);
+      // Stripe doesn't guarantee event order. Re-read the subscription so an older event
+      // arriving late can never roll a customer back to a stale plan or status.
+      const evtSub = event.data.object;
+      const orgId = await orgFor(evtSub);
       if (orgId) {
+        const sub = await stripe().subscriptions.retrieve(evtSub.id);
         await syncSubscription(store, orgId, sub);
         if (event.type === "customer.subscription.deleted") await trackServer("subscription_cancelled", orgId);
       }
       break;
     }
+    case "invoice.paid":
     case "invoice.payment_failed": {
-      // Stripe moves the subscription to past_due and fires subscription.updated; we keep Pro
-      // through the retry window and show a banner (status past_due). Re-sync to be safe.
+      // payment_failed: Stripe marks the subscription past_due (we keep access through retries and show a banner).
+      // paid: clears past_due as soon as a retry or a new card succeeds.
       const inv = event.data.object as Stripe.Invoice & { subscription?: string | null };
       const subId = inv.subscription ?? (inv as unknown as { parent?: { subscription_details?: { subscription?: string } } }).parent?.subscription_details?.subscription;
       const orgId = await orgFor(inv);

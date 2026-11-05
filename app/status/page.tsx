@@ -3,6 +3,15 @@ import { BrandMark } from "@/components/shell/nav";
 import { env, isAnthropicConfigured, isDemoMode, isStripeConfigured } from "@/lib/env";
 import { supabaseAdmin, supabaseServer } from "@/lib/supabase/server";
 import { pingClaude } from "@/lib/ai/claude";
+import { checkStripeSetup, type StripeCheck } from "@/lib/billing/check";
+
+const gs = globalThis as unknown as { __stripeCheck?: { at: number; rows: StripeCheck[] } };
+async function stripeChecks(): Promise<StripeCheck[]> {
+  if (gs.__stripeCheck && Date.now() - gs.__stripeCheck.at < 5 * 60_000) return gs.__stripeCheck.rows;
+  const rows = await checkStripeSetup().catch(() => [{ label: "Stripe check", ok: false, fix: "Couldn't reach Stripe. Try again in a minute." }]);
+  gs.__stripeCheck = { at: Date.now(), rows };
+  return rows;
+}
 
 // Live SI check result, cached briefly per server instance so reloading /status can't run up the bill.
 const g = globalThis as unknown as { __siPing?: { at: number; ok: boolean; reason?: string } };
@@ -84,6 +93,11 @@ export default async function StatusPage() {
     } else add("SI (Claude) answers a live test (sign in to run it)", null, "");
   }
   add("Stripe set (needed only for paid plans)", isStripeConfigured(), "Add STRIPE_SECRET_KEY and the STRIPE_PRICE_* values in Vercel, then Redeploy.");
+  if (process.env.STRIPE_SECRET_KEY) {
+    // Live Stripe checks only for signed-in visitors, cached briefly.
+    if (signedIn) for (const c of await stripeChecks()) add(c.label, c.ok, c.fix);
+    else add("Stripe live check (sign in to run it)", null, "");
+  }
   add("RentCast set (needed only for property data)", Boolean(process.env.RENTCAST_API_KEY), "Add RENTCAST_API_KEY in Vercel, then Redeploy.");
 
   const mark = (ok: boolean | null) => (ok === null ? "–" : ok ? "✓" : "✗");

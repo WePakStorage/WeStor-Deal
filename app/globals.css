@@ -4,19 +4,21 @@
 
 /* Tokens. Dark (ink) is the default; light keeps the same roles. */
 :root {
-  /* UndrIq: black and white. Colour is reserved for verdicts (go / amber / stop). */
-  --ink: #0a0a0a;
-  --surface: #111111;
-  --raised: #1a1a1a;
-  --line: #2a2a2a;
-  --line-soft: #1f1f1f;
-  --text: #f5f5f4;
-  --muted: #9a9a96;
-  --door: #f5f5f4;
+  /* UndrIq brand (matches the ads): pure black, white type, one green accent.
+     Green doubles as the "go" verdict; amber and red stay for warnings. */
+  --ink: #000000;
+  --surface: #0b0b0b;
+  --raised: #151515;
+  --line: #262626;
+  --line-soft: #1a1a1a;
+  --text: #fafafa;
+  --muted: #a1a1a1;
+  --door: #ffffff;
   --door-strong: #ffffff;
-  --on-door: #0a0a0a;
+  --on-door: #000000;
+  --brand: #22c55e;
   --amber: #e0b04a;
-  --go: #4ade80;
+  --go: #22c55e;
   --stop: #f87171;
   --gold: #f5f5f4;
   --glow: rgba(255, 255, 255, 0.12);
@@ -35,6 +37,7 @@
   --door: #0a0a0a;
   --door-strong: #000000;
   --on-door: #ffffff;
+  --brand: #16a34a;
   --amber: #a16207;
   --go: #15803d;
   --stop: #b91c1c;
@@ -57,10 +60,11 @@
   --color-on-door: var(--on-door);
   --color-amber: var(--amber);
   --color-go: var(--go);
+  --color-brand: var(--brand);
   --color-stop: var(--stop);
   --color-gold: var(--gold);
-  --font-sans: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
-  --font-serif: var(--font-instrument-serif), ui-serif, Georgia, serif;
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display-face), var(--font-body), ui-sans-serif, system-ui, sans-serif;
   --shadow-panel: var(--shadow);
   --animate-in: fade-up 180ms cubic-bezier(0.2, 0.7, 0.2, 1);
 }
@@ -77,7 +81,7 @@ html, body {
 
 body {
   font-family: var(--font-sans);
-  font-feature-settings: "tnum" 1, "ss01" 1;
+  font-feature-settings: "tnum" 1;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -106,5 +110,18 @@ body {
 /* Locked Pro content: cosmetic only, the server enforces access. */
 .locked-blur { filter: blur(7px) saturate(0.7); pointer-events: none; user-select: none; }
 
-/* Display type: Instrument Serif for big numbers and headlines */
-.display { font-family: var(--font-serif); font-weight: 400; letter-spacing: -0.01em; }
+/* Display type: extra-bold tight sans for headlines and big numbers, as in the ads */
+.display { font-family: var(--font-display); font-weight: 800; letter-spacing: -0.04em; line-height: 1.02; }
+
+/* Small green section label ("STEP 1", "EXIT 2" in the ads) */
+.eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--brand); }
+
+/* Faint grid backdrop from the banners, fading out at the edges */
+.bg-grid {
+  background-image:
+    linear-gradient(to right, var(--line-soft) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--line-soft) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 35%, #000 40%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 35%, #000 40%, transparent 100%);
+}

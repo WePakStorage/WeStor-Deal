@@ -8,9 +8,11 @@ export default function Pricing() {
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto max-w-[1200px] px-4 py-16 sm:px-6 sm:py-24">
+      <main className="relative mx-auto max-w-[1200px] px-4 py-16 sm:px-6 sm:py-24">
+        <div className="bg-grid pointer-events-none absolute inset-0 -z-10" aria-hidden />
         <div className="text-center">
-          <h1 className="display text-5xl sm:text-6xl">Simple pricing</h1>
+          <p className="eyebrow">Pricing</p>
+          <h1 className="display mt-3 text-5xl sm:text-6xl">Simple pricing</h1>
           <p className="mt-4 text-lg text-muted">Your first analysis is free and fully unlocked. Investor and Firm start with a 7-day free trial.</p>
         </div>
         <div className="mt-14"><PlanCards /></div>

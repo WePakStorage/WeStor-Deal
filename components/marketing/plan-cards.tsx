@@ -14,10 +14,10 @@ export function PlanCards() {
         const p = PLANS[id];
         const dark = id === "fund";
         return (
-          <div key={id} className={cn("flex flex-col rounded-2xl border p-6", dark ? "border-text bg-text text-ink" : "border-line bg-surface")}>
+          <div key={id} className={cn("flex flex-col rounded-2xl border p-6", dark ? "border-text bg-text text-ink" : id === "investor" ? "border-brand/60 bg-surface shadow-[0_0_0_1px_var(--brand)_inset]" : "border-line bg-surface")}>
             <div className="flex items-center justify-between">
-              <div className="text-sm font-medium uppercase tracking-wider opacity-70">{p.name}</div>
-              <span className={cn("rounded-full border px-2 py-0.5 text-[11px]", id === "investor" ? "border-current font-medium" : "border-current opacity-70")}>{p.hook}</span>
+              <div className={cn("text-xs font-semibold uppercase tracking-[0.18em]", id === "investor" ? "text-brand" : "opacity-70")}>{p.name}</div>
+              <span className={cn("rounded-full border px-2 py-0.5 text-[11px]", id === "investor" ? "border-brand bg-brand/10 font-medium text-brand" : "border-current opacity-70")}>{p.hook}</span>
             </div>
             <div className="mt-3 flex items-baseline gap-1">
               <span className="display text-5xl tabular">${p.priceMonthly}</span>
@@ -28,7 +28,7 @@ export function PlanCards() {
             <ul className="mt-5 flex-1 space-y-2.5">
               {p.bullets.map((f) => (
                 <li key={f} className="flex items-start gap-2 text-sm">
-                  <Check className="mt-0.5 size-4 shrink-0" />
+                  <Check className={cn("mt-0.5 size-4 shrink-0", !dark && "text-brand")} />
                   {f}
                 </li>
               ))}

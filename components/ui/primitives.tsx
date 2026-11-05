@@ -4,17 +4,18 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/cn";
 
 export const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-semibold transition-colors disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        primary: "bg-door text-on-door hover:bg-door-strong",
+        primary: "bg-door text-on-door hover:opacity-90",
         secondary: "bg-raised text-text border border-line hover:border-muted/60",
         ghost: "text-muted hover:text-text hover:bg-raised",
         danger: "bg-stop/10 text-stop border border-stop/30 hover:bg-stop/15",
-        gold: "bg-door text-on-door hover:bg-door-strong",
+        gold: "bg-door text-on-door hover:opacity-90",
+        brand: "bg-brand text-black hover:opacity-90",
       },
-      size: { sm: "h-8 px-3", md: "h-10 px-4", lg: "h-12 px-6 text-base", icon: "h-9 w-9" },
+      size: { sm: "h-8 px-3.5", md: "h-10 px-5", lg: "h-12 px-7 text-base", icon: "h-9 w-9" },
     },
     defaultVariants: { variant: "primary", size: "md" },
   },
@@ -49,7 +50,7 @@ export const Label = ({ className, ...p }: React.LabelHTMLAttributes<HTMLLabelEl
 );
 
 const field =
-  "h-10 w-full rounded-lg border border-line bg-raised px-3 text-sm text-text placeholder:text-muted/70 transition-colors hover:border-muted/50 focus-visible:border-door focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-door/30";
+  "h-10 w-full rounded-xl border border-line bg-raised px-3 text-sm text-text placeholder:text-muted/70 transition-colors hover:border-muted/50 focus-visible:border-door focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-door/30";
 
 export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(({ className, ...p }, ref) => (
   <input ref={ref} className={cn(field, className)} {...p} />
@@ -120,7 +121,7 @@ export function PageHeader({ title, description, actions }: { title: string; des
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+        <h1 className="display text-3xl">{title}</h1>
         {description ? <p className="mt-1 text-sm text-muted">{description}</p> : null}
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}

@@ -33,15 +33,12 @@ const NAV: NavItem[] = [
   { href: "/app/settings", label: "Settings", icon: Settings, mobile: true },
 ];
 
+/** Brand wordmark from the ads: bold white "UndrIq" with a green dot. */
 export function BrandMark({ className }: { className?: string }) {
   return (
-    <span className={cn("inline-flex items-center gap-2.5", className)}>
-      <svg viewBox="0 0 32 32" className="size-7" aria-hidden>
-        <rect x="1" y="1" width="30" height="30" rx="8" fill="var(--text)" />
-        <path d="M10 9v8.5a6 6 0 0 0 12 0V9" fill="none" stroke="var(--ink)" strokeWidth="2.4" strokeLinecap="round" />
-        <circle cx="16" cy="24.5" r="1.6" fill="var(--ink)" />
-      </svg>
-      <span className="display text-[22px] leading-none">UndrIq</span>
+    <span className={cn("inline-flex items-baseline text-[22px] font-bold leading-none tracking-[-0.03em]", className)} aria-label="UndrIq">
+      UndrIq
+      <span className="ml-0.5 inline-block size-[7px] -translate-y-[12px] rounded-full bg-brand" aria-hidden />
     </span>
   );
 }

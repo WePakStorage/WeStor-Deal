@@ -4,6 +4,7 @@ import { SiteFooter, SiteHeader } from "@/components/marketing/site-chrome";
 import { AssistantWidget } from "@/components/marketing/assistant-widget";
 import { PlanCards } from "@/components/marketing/plan-cards";
 import { Button } from "@/components/ui/primitives";
+import { ScoreRing } from "@/components/undriq/score";
 
 const FEATURES = [
   { icon: Layers, title: "Exit Strategy Matrix", body: "Wholesale, flip, buy and hold, BRRRR and seller finance, scored side by side with a max price for each. Most tools give you one number; you get five ways to win." },
@@ -28,12 +29,14 @@ export default function Landing() {
     <>
       <SiteHeader />
       <main>
-        <section className="mx-auto max-w-[1200px] px-4 pb-16 pt-16 sm:px-6 sm:pt-24">
+        <section className="relative mx-auto max-w-[1200px] px-4 pb-16 pt-16 sm:px-6 sm:pt-24">
+          <div className="bg-grid pointer-events-none absolute inset-0 -z-10" aria-hidden />
           <div className="mx-auto max-w-3xl text-center">
-            <p className="inline-flex items-center gap-2 rounded-full border border-line px-3 py-1 text-xs text-muted">
+            <p className="inline-flex items-center gap-2 rounded-full border border-line bg-ink px-3 py-1 text-xs text-muted">
+              <span className="size-1.5 rounded-full bg-brand" aria-hidden />
               Residential · Multifamily · Self storage · Industrial · Retail and office
             </p>
-            <h1 className="display mt-6 text-5xl leading-[1.05] sm:text-7xl">Underwrite any deal in minutes.</h1>
+            <h1 className="display mt-6 text-5xl sm:text-7xl">Underwrite any deal in minutes.</h1>
             <p className="mx-auto mt-5 max-w-2xl text-lg text-muted">
               UndrIq is the acquisitions analyst for investors and wholesalers, built on SI: Super Intelligence technology. Paste a listing and get a deal score, five exit strategies, your offer ladder and a ready-to-send offer.
             </p>
@@ -46,9 +49,7 @@ export default function Landing() {
 
           <div className="mx-auto mt-14 max-w-4xl rounded-3xl border border-line bg-surface p-5 shadow-panel sm:p-8" aria-label="Example analysis">
             <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-              <div className="grid size-28 shrink-0 place-items-center rounded-full border-[6px] border-go/80 text-center">
-                <div><div className="display text-4xl leading-none">82</div><div className="text-[10px] uppercase tracking-wider text-muted">Deal score</div></div>
-              </div>
+              <ScoreRing score={82} size={120} />
               <div className="min-w-0 flex-1">
                 <div className="text-xs text-muted">Example · Single-family · Memphis, TN</div>
                 <div className="mt-1 text-xl font-semibold">3-bed ranch, needs a kitchen and roof</div>
@@ -71,7 +72,7 @@ export default function Landing() {
           <div className="mx-auto grid max-w-[1200px] gap-6 px-4 py-14 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
             {STEPS.map((s, i) => (
               <div key={s.k}>
-                <div className="flex items-center gap-2 text-sm text-muted"><span className="tabular">0{i + 1}</span><s.icon className="size-4" /></div>
+                <div className="flex items-center gap-2"><span className="eyebrow tabular">Step {i + 1}</span><s.icon className="size-4 text-muted" /></div>
                 <div className="display mt-2 text-3xl">{s.k}</div>
                 <p className="mt-1 text-sm text-muted">{s.t}</p>
               </div>
@@ -80,12 +81,13 @@ export default function Landing() {
         </section>
 
         <section className="mx-auto max-w-[1200px] px-4 py-20 sm:px-6">
-          <h2 className="display max-w-2xl text-4xl sm:text-5xl">What other analyzers don&apos;t do.</h2>
+          <p className="eyebrow">Why UndrIq</p>
+          <h2 className="display mt-3 max-w-2xl text-4xl sm:text-5xl">What other analyzers don&apos;t do.</h2>
           <p className="mt-3 max-w-2xl text-muted">Built for people who make offers, not spreadsheets. SI reads and writes; every number is computed by tested code.</p>
           <div className="mt-10 grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
             {FEATURES.map((f) => (
               <div key={f.title} className="bg-surface p-6">
-                <f.icon className="size-5" />
+                <f.icon className="size-5 text-brand" />
                 <div className="mt-3 font-medium">{f.title}</div>
                 <p className="mt-1.5 text-sm leading-relaxed text-muted">{f.body}</p>
               </div>
@@ -94,7 +96,8 @@ export default function Landing() {
         </section>
 
         <section className="mx-auto max-w-[1200px] px-4 pb-20 sm:px-6" id="pricing">
-          <h2 className="display text-4xl sm:text-5xl">Pricing</h2>
+          <p className="eyebrow">Pricing</p>
+          <h2 className="display mt-3 text-4xl sm:text-5xl">Your first deal is free.</h2>
           <p className="mt-3 text-muted">Your first analysis is fully unlocked. Paid plans start with a 7-day free trial.</p>
           <div className="mt-8"><PlanCards /></div>
         </section>

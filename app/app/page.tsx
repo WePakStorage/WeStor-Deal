@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { ArrowRight, Lock, ShieldCheck, Users } from "lucide-react";
 import { AnalyzeForm } from "@/components/undriq/analyze-form";
+import { CheckoutNotice } from "@/components/undriq/checkout-notice";
+import { effectivePlan } from "@/lib/billing/plans";
 import { ScoreDot } from "@/components/undriq/score";
 import { Card, CardHeader } from "@/components/ui/primitives";
 import { timeAgo } from "@/lib/format";
@@ -12,15 +14,19 @@ import { ANALYSIS_STAGE_LABEL } from "@/lib/undriq/types";
 
 export const metadata = { title: "Analyze a deal" };
 
-export default async function AnalyzePage() {
+export default async function AnalyzePage({ searchParams }: { searchParams: Promise<{ checkout?: string }> }) {
+  const { checkout } = await searchParams;
   const ctx = await requireContext();
   const { uq, orgId, user, space, plan } = ctx;
-  const [usage, recent] = await Promise.all([quotaFor(ctx), uq.listAnalyses(orgId)]);
+  const [usage, recent, mySub] = await Promise.all([quotaFor(ctx), uq.listAnalyses(orgId), ctx.store.getSubscription(ctx.personalOrgId)]);
   const first = user.name.split(" ")[0];
 
   return (
     <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px]">
       <div className="min-w-0">
+        {checkout === "success" || checkout === "pending" || checkout === "cancelled" ? (
+          <CheckoutNotice status={checkout} plan={effectivePlan(mySub)} trialing={mySub.status === "trialing"} />
+        ) : null}
         <div className="mb-6">
           <p className="text-sm text-muted">Welcome back, {first}</p>
           <h1 className="display mt-1 text-4xl leading-tight sm:text-5xl">Analyze a deal in minutes.</h1>

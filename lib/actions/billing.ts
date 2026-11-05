@@ -45,8 +45,9 @@ export async function startCheckout(tier: PaidPlan = "investor"): Promise<Action
       payment_method_collection: "always",
       ...(sub.stripe_customer_id ? { customer: sub.stripe_customer_id } : { customer_email: user.email }),
       allow_promotion_codes: true,
-      success_url: `${env.appUrl}/app/settings?tab=billing&checkout=success`,
-      cancel_url: `${env.appUrl}/app/settings?tab=billing`,
+      // Back to our confirm step, which switches the plan on and lands the customer on the dashboard.
+      success_url: `${env.appUrl}/api/stripe/confirm?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${env.appUrl}/app?checkout=cancelled`,
     });
     return { url: session.url };
   });

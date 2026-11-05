@@ -13,15 +13,13 @@ import { track } from "@/components/analytics";
 interface AppState {
   /** Plan of the active space. */
   plan: Plan;
-  /** Any paid plan (legacy self-storage tools). */
-  isPro: boolean;
   demo: boolean;
   status: string;
   spaceKind: "personal" | "team";
   openUpgrade: (reason?: string, min?: PaidPlan) => void;
 }
 
-const Ctx = React.createContext<AppState>({ plan: "free", isPro: false, demo: false, status: "none", spaceKind: "personal", openUpgrade: () => {} });
+const Ctx = React.createContext<AppState>({ plan: "free", demo: false, status: "none", spaceKind: "personal", openUpgrade: () => {} });
 export const useApp = () => React.useContext(Ctx);
 
 export function AppProvider(p: { plan: Plan; demo: boolean; status: string; spaceKind: "personal" | "team"; children: React.ReactNode }) {
@@ -70,7 +68,7 @@ function Inner({ plan, demo, status, spaceKind, children }: { plan: Plan; demo: 
   const tiers = PAID_PLANS.filter((t) => PLANS[t].rank >= PLANS[min].rank);
 
   return (
-    <Ctx.Provider value={{ plan, isPro: PLANS[plan].features.liveUnderwriting, demo, status, spaceKind, openUpgrade }}>
+    <Ctx.Provider value={{ plan, demo, status, spaceKind, openUpgrade }}>
       {children}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent wide className="max-w-4xl" title="Upgrade UndrIq" description={reason ?? "Pick the plan that fits how many deals you work."}>

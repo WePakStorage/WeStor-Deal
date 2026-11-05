@@ -6,7 +6,8 @@ import { analyzeInput, runAnalysis } from "@/lib/undriq/service";
 export const runtime = "nodejs";
 export const maxDuration = 120;
 
-const MAX_PDF = 25 * 1024 * 1024;
+/** Vercel rejects request bodies over 4.5 MB, so keep uploads safely under it. */
+const MAX_PDF = 4 * 1024 * 1024;
 
 /**
  * POST /api/analyze: JSON body, or multipart with `payload` (JSON) and an optional `file` (PDF).
@@ -22,7 +23,7 @@ export async function POST(req: Request) {
       raw = JSON.parse(String(form.get("payload") ?? "{}"));
       const file = form.get("file");
       if (file instanceof File && file.size > 0) {
-        if (file.size > MAX_PDF) throw new HttpError(413, "That PDF is over 25 MB.");
+        if (file.size > MAX_PDF) throw new HttpError(413, "That PDF is over 4 MB. Upload a smaller version or paste the listing text.");
         const bytes = new Uint8Array(await file.arrayBuffer());
         // %PDF magic bytes: never trust the extension or the browser's MIME type.
         if (!(bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46)) throw new HttpError(415, "Upload a PDF.");

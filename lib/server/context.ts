@@ -46,7 +46,7 @@ export const getContext = cache(async (): Promise<Ctx | null> => {
       uq: memoryUqStore,
       orgId: r.space.orgId,
       ...r,
-      user: { id: DEMO_USER_ID, email: "demo@undriq.app", name: "Sheldrick Redwine", role: r.space.role },
+      user: { id: DEMO_USER_ID, email: "demo@undriq.app", name: "Demo User", role: r.space.role },
       demo: true,
     };
   }
@@ -92,7 +92,7 @@ export async function requireContext(): Promise<Ctx> {
   redirect("/login");
 }
 
-/** Store for unauthenticated server paths (webhooks, inbound email). */
+/** Store for unauthenticated server paths (the Stripe webhook). */
 export function getAdminStore(): Store {
   if (isDemoMode()) return memoryStore;
   const admin = supabaseAdmin();

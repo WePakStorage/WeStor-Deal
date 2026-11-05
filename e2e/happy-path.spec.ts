@@ -1,39 +1,42 @@
 import { expect, test } from "@playwright/test";
 
 /**
- * Happy path in demo mode (no Supabase/Stripe keys): free user sees locks,
- * the contract gate blocks Under contract, upgrading unlocks the live panel,
- * and San Antonio shows 1.35x DSCR at $715K / 30% / 7.5% / 20 yr.
+ * Demo-mode happy path (no Supabase keys): landing → analyze with quick numbers → Scout's first
+ * analysis is fully unlocked → saving an offer asks for a plan → upgrade (demo) → offer saved →
+ * deal shows in the pipeline → second Scout-style lock is gone. Numbers are typed, so the result
+ * doesn't depend on any AI read.
  */
-const SA = "/app/deals/5a000000-0000-4000-8000-000000000001";
-
-test("landing → pipeline → underwriting", async ({ page, request }) => {
+test("analyze, upgrade, offer, pipeline", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Underwrite a storage deal");
-
-  // Pro API routes refuse a free org.
-  expect((await request.get("/api/export/deals")).status()).toBe(402);
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Underwrite any deal");
 
   await page.goto("/app");
-  await expect(page.getByText("West San Antonio Storage").first()).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Analyze a deal");
+  await page.locator("summary", { hasText: "Quick numbers" }).click();
+  await page.locator("#q-name").fill("12 Oak St");
+  await page.locator("#q-city").fill("Memphis");
+  await page.locator("#q-state").fill("TN");
+  await page.locator("#q-list").fill("120000");
+  await page.locator("#q-rentMonthly").fill("1650");
+  await page.locator("#q-arv").fill("210000");
+  await page.locator("#q-rehab").fill("35000");
+  await page.getByRole("button", { name: /Analyze deal/ }).click();
 
-  // Contract gate
-  await page.goto(SA);
-  await page.selectOption("#stage", "under_contract");
-  await expect(page.getByText("Record the contract")).toBeVisible();
-  await page.keyboard.press("Escape");
+  await page.waitForURL(/\/app\/analyses\//, { timeout: 120_000 });
+  await expect(page.getByText("Your first analysis is on us")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Exit Strategy Matrix" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Offer Ladder" })).toBeVisible();
+
+  // Saving an offer is a paid feature: the plan picker opens with the trial.
+  await page.getByRole("button", { name: "Save offer" }).click();
+  await expect(page.getByText("Upgrade UndrIq")).toBeVisible();
+  await page.getByRole("button", { name: /Start 7-day free trial/ }).first().click();
+  await expect(page.getByText(/Investor unlocked/)).toBeVisible();
+
   await page.reload();
-  await expect(page.locator("#stage")).toHaveValue("negotiating");
+  await page.getByRole("button", { name: "Save offer" }).click();
+  await expect(page.getByRole("heading", { name: "Offer history" })).toBeVisible();
 
-  // Upgrade (demo checkout) and check the signature numbers
-  await page.goto(`${SA}?tab=underwriting`);
-  await page.getByRole("button", { name: "Unlock for $49/month" }).first().click();
-  await page.getByRole("button", { name: /Upgrade for \$49/ }).click();
-  await expect(page.getByText("1.35x")).toBeVisible({ timeout: 10_000 });
-  await expect(page.getByText("$715,000").first()).toBeVisible();
-  await expect(page.getByText("9.11%").first()).toBeVisible();
-
-  // OM stays locked server-side while Negotiating
-  const om = await request.post(`/api/deals/5a000000-0000-4000-8000-000000000001/generate`, { data: { kind: "om" } });
-  expect(om.status()).toBe(403);
+  await page.goto("/app/pipeline");
+  await expect(page.locator("section[aria-label='Offer sent'] article")).toContainText("12 Oak St");
 });

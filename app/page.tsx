@@ -17,7 +17,7 @@ const FEATURES = [
 
 const STEPS = [
   { icon: Link2, k: "Source", t: "Paste the link and the listing text, or upload the OM." },
-  { icon: Sparkles, k: "Analyze", t: "AI reads the facts. Code runs the math. You get a score in about a minute." },
+  { icon: Sparkles, k: "Analyze", t: "SI reads the facts. Code runs the math. You get a score in about a minute." },
   { icon: FileSignature, k: "Offer", t: "Pick a rung on the ladder and send a ready-made LOI." },
   { icon: KanbanSquare, k: "Track", t: "Every deal and offer lives in your pipeline, private or shared." },
 ];
@@ -34,7 +34,7 @@ export default function Landing() {
             </p>
             <h1 className="display mt-6 text-5xl leading-[1.05] sm:text-7xl">Underwrite any deal in minutes.</h1>
             <p className="mx-auto mt-5 max-w-2xl text-lg text-muted">
-              UndrIq is the AI acquisitions analyst for investors and wholesalers. Paste a listing and get a deal score, five exit strategies, your offer ladder and a ready-to-send offer.
+              UndrIq is the acquisitions analyst for investors and wholesalers, built on SI: Super Intelligence technology. Paste a listing and get a deal score, five exit strategies, your offer ladder and a ready-to-send offer.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Button asChild size="lg"><Link href="/login?mode=signup">Analyze your first deal free <ArrowRight /></Link></Button>
@@ -80,7 +80,7 @@ export default function Landing() {
 
         <section className="mx-auto max-w-[1200px] px-4 py-20 sm:px-6">
           <h2 className="display max-w-2xl text-4xl sm:text-5xl">What other analyzers don&apos;t do.</h2>
-          <p className="mt-3 max-w-2xl text-muted">Built for people who make offers, not spreadsheets. AI reads and writes; every number is computed by tested code.</p>
+          <p className="mt-3 max-w-2xl text-muted">Built for people who make offers, not spreadsheets. SI reads and writes; every number is computed by tested code.</p>
           <div className="mt-10 grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
             {FEATURES.map((f) => (
               <div key={f.title} className="bg-surface p-6">

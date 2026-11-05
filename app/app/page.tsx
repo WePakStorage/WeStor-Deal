@@ -32,7 +32,7 @@ export default async function AnalyzePage() {
           <AnalyzeForm left={usage.left} lookupEnabled={isRentcastConfigured()} />
         </Card>
         <p className="mt-3 flex items-center gap-1.5 text-xs text-muted">
-          <ShieldCheck className="size-3.5" /> Every number is computed by code, not guessed by AI. UndrIq never scrapes listing sites: property data comes from licensed records looked up by address.
+          <ShieldCheck className="size-3.5" /> SI reads the listing and writes the memo; every number is computed by tested code. UndrIq never scrapes listing sites: property data comes from licensed records looked up by address.
         </p>
       </div>
 

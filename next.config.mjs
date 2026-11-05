@@ -1,7 +1,4 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {
-  serverExternalPackages: ["@react-pdf/renderer"],
-  experimental: { serverActions: { bodySizeLimit: "26mb" } },
-};
+const nextConfig = {};
 
 export default nextConfig;

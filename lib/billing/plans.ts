@@ -21,8 +21,6 @@ export interface PlanConfig {
   hook: string;
   /** Stripe free-trial days for a first subscription (0 = none). */
   trialDays: number;
-  /** Legacy self-storage deal limit (null = unlimited). */
-  dealLimit: number | null;
   rank: number;
   blurb: string;
   bullets: string[];
@@ -36,44 +34,39 @@ export interface PlanConfig {
     teamSpace: boolean;
     bulk: boolean;
     buyBoxRules: boolean;
-    /** Legacy self-storage tools (OM reader, live underwriting, sourcing). */
-    liveUnderwriting: boolean;
-    omReader: boolean;
-    docs: boolean;
-    sourcing: boolean;
   };
 }
 
-const none = { fullAnalysis: false, pipeline: false, offers: false, buyers: false, csvExport: false, teamSpace: false, bulk: false, buyBoxRules: false, liveUnderwriting: false, omReader: false, docs: false, sourcing: false };
-const investor = { ...none, fullAnalysis: true, pipeline: true, offers: true, buyers: true, liveUnderwriting: true, omReader: true, docs: true, sourcing: true };
+const none = { fullAnalysis: false, pipeline: false, offers: false, buyers: false, csvExport: false, teamSpace: false, bulk: false, buyBoxRules: false };
+const investor = { ...none, fullAnalysis: true, pipeline: true, offers: true, buyers: true };
 
 export const PLANS: Record<Plan, PlanConfig> = {
   free: {
-    id: "free", name: "Scout", priceMonthly: 0, stripePriceEnv: null, analyses: 3, analysesPeriod: "lifetime", seats: 1, teams: 0, dealLimit: 3, rank: 0,
+    id: "free", name: "Scout", priceMonthly: 0, stripePriceEnv: null, analyses: 3, analysesPeriod: "lifetime", seats: 1, teams: 0, rank: 0,
     hook: "First analysis fully unlocked", trialDays: 0,
     blurb: "See exactly what UndrIq does on a deal you're looking at.",
-    bullets: ["Your first analysis fully unlocked", "3 AI deal analyses", "Score, verdict and best exit on every deal", "Property data lookups"],
+    bullets: ["Your first analysis fully unlocked", "3 SI deal analyses", "Score, verdict and best exit on every deal", "Property data lookups"],
     features: none,
   },
   investor: {
-    id: "investor", name: "Investor", priceMonthly: 49, stripePriceEnv: "STRIPE_PRICE_INVESTOR", analyses: 50, analysesPeriod: "month", seats: 1, teams: 0, dealLimit: null, rank: 1,
+    id: "investor", name: "Investor", priceMonthly: 49, stripePriceEnv: "STRIPE_PRICE_INVESTOR", analyses: 50, analysesPeriod: "month", seats: 1, teams: 0, rank: 1,
     hook: "Most popular", trialDays: 7,
     blurb: "For investors and wholesalers making offers every week.",
-    bullets: ["50 AI analyses a month", "Full analysis on every deal: 5 exits, offer ladder, stress test, memo", "Offer generator: LOI, email, text and call script", "Private pipeline and buyer list with matching", "Property data lookups"],
+    bullets: ["50 SI analyses a month", "Full analysis on every deal: 5 exits, offer ladder, stress test, memo", "Offer generator: LOI, email, text and call script", "Private pipeline and buyer list with matching", "Property data lookups"],
     features: investor,
   },
   firm: {
-    id: "firm", name: "Firm", priceMonthly: 149, stripePriceEnv: "STRIPE_PRICE_FIRM", analyses: 250, analysesPeriod: "month", seats: 5, teams: 1, dealLimit: null, rank: 2,
+    id: "firm", name: "Firm", priceMonthly: 149, stripePriceEnv: "STRIPE_PRICE_FIRM", analyses: 250, analysesPeriod: "month", seats: 5, teams: 1, rank: 2,
     hook: "About $30 per person", trialDays: 7,
     blurb: "For acquisition teams working one shared pipeline.",
-    bullets: ["250 AI analyses a month", "Everything in Investor", "Shared team space for 5 people", "Your own buy box rules on every score", "CSV export of deals and buyers"],
+    bullets: ["250 SI analyses a month", "Everything in Investor", "Shared team space for 5 people", "Your own buy box rules on every score", "CSV export of deals and buyers"],
     features: { ...investor, csvExport: true, teamSpace: true, buyBoxRules: true },
   },
   fund: {
-    id: "fund", name: "Fund", priceMonthly: 399, stripePriceEnv: "STRIPE_PRICE_FUND", analyses: 1000, analysesPeriod: "month", seats: 15, teams: 3, dealLimit: null, rank: 3,
+    id: "fund", name: "Fund", priceMonthly: 399, stripePriceEnv: "STRIPE_PRICE_FUND", analyses: 1000, analysesPeriod: "month", seats: 15, teams: 3, rank: 3,
     hook: "Unlimited, fair use", trialDays: 0,
     blurb: "For operators who screen volume and sell deals to buyers.",
-    bullets: ["Unlimited analyses (fair use, 1,000 a month)", "Everything in Firm", "3 team spaces, up to 15 people each", "Bulk analyzer: score 500 deals at once", "Priority support and an onboarding call"],
+    bullets: ["Unlimited SI analyses (fair use, 1,000 a month)", "Everything in Firm", "3 team spaces, up to 15 people each", "Bulk analyzer: score 500 deals at once", "Priority support and an onboarding call"],
     features: { ...investor, csvExport: true, teamSpace: true, bulk: true, buyBoxRules: true },
   },
 };
@@ -106,7 +99,7 @@ export function planForPriceId(priceId: string, envs: Record<string, string | un
     const key = PLANS[p].stripePriceEnv;
     if (key && envs[key] && envs[key] === priceId) return p;
   }
-  // Legacy single-tier price from the WeStor build maps to Investor.
+  // Legacy single-tier price (STRIPE_PRICE_PRO_MONTHLY) maps to Investor.
   if (envs.STRIPE_PRICE_PRO_MONTHLY && envs.STRIPE_PRICE_PRO_MONTHLY === priceId) return "investor";
   return null;
 }

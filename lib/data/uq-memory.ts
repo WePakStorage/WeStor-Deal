@@ -1,7 +1,7 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { effectivePlan, maxPlan, PLANS } from "../billing/plans";
-import { DEFAULT_ASSUMPTIONS, type Plan } from "../types";
+import type { Plan } from "../types";
 import type { AnalysisRow, Space, SpaceMember } from "../undriq/types";
 import { DEMO_ORG_ID, DEMO_USER_ID, demoTables } from "./memory";
 import { SpaceError, type UqStore, type UsageKind } from "./uq-store";
@@ -97,11 +97,7 @@ export const memoryUqStore: UqStore = {
     const cfg = PLANS[userPlan(userId)];
     if (owned >= cfg.teams) throw new SpaceError(400, `${cfg.name} includes ${cfg.teams} team space${cfg.teams === 1 ? "" : "s"}.${cfg.id === "fund" ? " Delete one to create another." : " Fund includes 3."}`);
     const id = randomUUID();
-    const me = demoTables.profiles().find((p) => p.user_id === userId);
-    demoTables.orgs().push({
-      id, name: name.trim() || "Team", brand_name: "", brand_tagline: "", contact_name: me?.full_name ?? "", contact_phone: "", contact_email: me?.email ?? "",
-      disclosure_entity: "", logo_url: null, inbound_token: randomUUID().replace(/-/g, "").slice(0, 18), defaults: DEFAULT_ASSUMPTIONS,
-    });
+    demoTables.orgs().push({ id, name: name.trim() || "Team" });
     demoTables.subscriptions().push({ org_id: id, stripe_customer_id: null, stripe_subscription_id: null, plan: "free", status: "none", current_period_end: null });
     mem().meta.set(id, { kind: "team", owner: userId, buyBox: {}, created: Date.now() });
     mem().members.push({ org_id: id, user_id: userId, role: "owner", at: Date.now() });

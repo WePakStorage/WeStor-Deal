@@ -2,10 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { scoreBuyer } from "../matching";
 import { buyerSchema, type BuyerInput } from "../schemas";
 import { HttpError, run } from "../server/run";
-import type { Buyer, MatchStatus } from "../types";
+import type { Buyer } from "../types";
 import type { ActionResult } from "./result";
 
 export async function saveBuyer(input: BuyerInput): Promise<ActionResult<Buyer>> {
@@ -16,7 +15,7 @@ export async function saveBuyer(input: BuyerInput): Promise<ActionResult<Buyer>>
       revalidatePath("/app/buyers");
       return saved;
     },
-    { pro: true },
+    { feature: "buyers" },
   );
 }
 
@@ -27,7 +26,7 @@ export async function deleteBuyer(id: string): Promise<ActionResult> {
       revalidatePath("/app/buyers");
       return null;
     },
-    { pro: true },
+    { feature: "buyers" },
   );
 }
 
@@ -50,23 +49,6 @@ export async function importBuyers(rows: unknown[]): Promise<ActionResult<{ impo
       revalidatePath("/app/buyers");
       return { imported, skipped };
     },
-    { pro: true },
-  );
-}
-
-export async function setMatchStatus(dealId: string, buyerId: string, status: MatchStatus): Promise<ActionResult> {
-  return run(
-    async ({ store, orgId, user }) => {
-      const s = z.enum(["suggested", "contacted", "interested", "passed"]).parse(status);
-      const [bundle, buyers] = await Promise.all([store.getDealBundle(orgId, dealId), store.listBuyers(orgId)]);
-      const buyer = buyers.find((b) => b.id === buyerId);
-      if (!bundle || !buyer) throw new HttpError(404, "Not found");
-      const m = scoreBuyer(bundle.deal, bundle.unitMix, buyer);
-      await store.setMatchStatus(orgId, dealId, buyerId, s, m.score, m.reasons);
-      await store.logActivity({ org_id: orgId, deal_id: dealId, actor: user.name, action: "buyer_status", payload: { buyer: buyer.firm_name, status: s } });
-      revalidatePath(`/app/deals/${dealId}`);
-      return null;
-    },
-    { pro: true },
+    { feature: "buyers" },
   );
 }

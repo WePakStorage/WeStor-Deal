@@ -5,11 +5,10 @@ import { getContext, type Ctx } from "./context";
 import { requireFeature, type Feature } from "./gate";
 
 /** Wrap a server action: resolve context, optionally require Pro, normalise errors. */
-export async function run<T>(fn: (ctx: Ctx) => Promise<T>, opts: { pro?: boolean; feature?: Feature } = {}): Promise<ActionResult<T>> {
+export async function run<T>(fn: (ctx: Ctx) => Promise<T>, opts: { feature?: Feature } = {}): Promise<ActionResult<T>> {
   try {
     const ctx = await getContext();
     if (!ctx) return { ok: false, error: "Sign in to continue.", status: 401 };
-    if (opts.pro) requireFeature(ctx, "liveUnderwriting");
     if (opts.feature) requireFeature(ctx, opts.feature);
     return { ok: true, data: await fn(ctx) };
   } catch (e) {

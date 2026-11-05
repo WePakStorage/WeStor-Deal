@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Check, ChevronsUpDown, Crown, KanbanSquare, Layers, Lock, LogOut, Plus, Settings, SlidersHorizontal, Sparkles, User, Users, Warehouse, Zap } from "lucide-react";
+import { Check, ChevronsUpDown, Crown, KanbanSquare, Layers, Lock, LogOut, Plus, Settings, SlidersHorizontal, Sparkles, User, Users, Zap } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { PLANS } from "@/lib/billing/plans";
 import { switchSpace } from "@/lib/actions/undriq";
@@ -30,7 +30,6 @@ const NAV: NavItem[] = [
   { href: "/app/team", label: "Team", icon: Layers, mobile: true },
   { href: "/app/bulk", label: "Bulk analyzer", icon: Sparkles, min: "fund" },
   { href: "/app/rules", label: "Buy box rules", icon: SlidersHorizontal, min: "firm" },
-  { href: "/app/deals", label: "Storage OM tools", icon: Warehouse, min: "investor" },
   { href: "/app/settings", label: "Settings", icon: Settings, mobile: true },
 ];
 

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Download, Plus } from "lucide-react";
 import { PipelineColumns } from "@/components/undriq/pipeline-columns";
 import { UpgradeCard } from "@/components/undriq/upgrade-card";
 import { Button, Card, PageHeader } from "@/components/ui/primitives";
@@ -25,7 +25,12 @@ export default async function PipelinePage() {
       <PageHeader
         title="Pipeline"
         description={space.kind === "personal" ? "Your private pipeline. Only you can see it." : `Shared with everyone in ${space.name}.`}
-        actions={<Button asChild><Link href="/app"><Plus /> Analyze a deal</Link></Button>}
+        actions={
+          <div className="flex gap-2">
+            {plan.features.csvExport ? <Button asChild variant="secondary"><a href="/api/export/pipeline" download><Download /> Export CSV</a></Button> : null}
+            <Button asChild><Link href="/app"><Plus /> Analyze a deal</Link></Button>
+          </div>
+        }
       />
       <Card className="mb-6 grid grid-cols-3 divide-x divide-line-soft">
         <Stat label="Active deals" value={String(active.length)} />

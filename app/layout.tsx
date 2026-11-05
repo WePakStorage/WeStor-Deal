@@ -7,7 +7,7 @@ const instrument = Instrument_Sans({ subsets: ["latin"], variable: "--font-instr
 const serif = Instrument_Serif({ subsets: ["latin"], weight: "400", variable: "--font-instrument-serif", display: "swap" });
 
 export const metadata: Metadata = {
-  title: { default: "UndrIq: AI deal analyzer for real estate investors", template: "%s · UndrIq" },
+  title: { default: "UndrIq: SI deal analyzer for real estate investors", template: "%s · UndrIq" },
   description: "Paste a listing, get a deal score, five exit strategies, an offer ladder and a ready-to-send offer in minutes. Residential, multifamily, storage, industrial and retail.",
 };
 

@@ -6,26 +6,21 @@ import { requireContext } from "@/lib/server/context";
 
 export const metadata = { title: "Settings" };
 
-export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ tab?: string; checkout?: string; plan?: string }> }) {
-  const { tab, checkout, plan: wanted } = await searchParams;
-  const { store, orgId, personalOrgId, space, demo } = await requireContext();
-  // Branding belongs to the active space; billing belongs to the person (their personal space).
-  const [org, sub] = await Promise.all([store.getOrg(orgId), store.getSubscription(personalOrgId)]);
-  if (!org) throw new Error("Space not found");
-  const inboundDomain = process.env.RESEND_INBOUND_DOMAIN || "inbound.undriq.app";
+export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ checkout?: string; plan?: string }> }) {
+  const { checkout, plan: wanted } = await searchParams;
+  const { store, personalOrgId, space, user, demo } = await requireContext();
+  // Billing belongs to the person (their personal space), whichever space is active.
+  const sub = await store.getSubscription(personalOrgId);
   return (
-    <div className="mx-auto max-w-4xl">
-      <PageHeader title="Settings" description={`Settings for ${space.kind === "team" ? `the ${space.name} team space` : "your private space"}, plus your plan and billing.`} />
+    <div className="mx-auto max-w-3xl">
+      <PageHeader title="Settings" description="Your plan, billing and account." />
       <SettingsView
-        org={org}
-        isOwner={space.role === "owner"}
-        spaceKind={space.kind}
+        account={{ name: user.name, email: user.email }}
+        space={{ kind: space.kind, name: space.name }}
         plan={effectivePlan(sub)}
         sub={{ status: sub.status, periodEnd: sub.current_period_end, hasCustomer: Boolean(sub.stripe_customer_id) }}
         billingLive={isStripeConfigured()}
         demo={demo}
-        inboundAddress={`alerts+${org.inbound_token}@${inboundDomain}`}
-        initialTab={tab ?? "firm"}
         checkoutSuccess={checkout === "success"}
         wantPlan={isPaidPlan(wanted) ? wanted : null}
       />

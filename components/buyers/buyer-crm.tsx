@@ -12,24 +12,30 @@ import { BUYER_TYPE_LABEL, BUYER_TYPES, PROPERTY_TYPE_LABEL, PROPERTY_TYPES, typ
 import { Badge, Button, Card, EmptyState, Field, Input, Select, Textarea } from "@/components/ui/primitives";
 import { NumberInput } from "@/components/ui/number-input";
 import { Dialog, DialogContent, useToast } from "@/components/ui/interactive";
-import { ProLock } from "@/components/shell/app-provider";
 import { track } from "@/components/analytics";
+import { useApp } from "@/components/shell/app-provider";
+import { PLANS } from "@/lib/billing/plans";
 
 export function BuyerCrm({ buyers, focusId }: { buyers: Buyer[]; focusId: string | null }) {
   const [q, setQ] = React.useState("");
   const [editing, setEditing] = React.useState<Buyer | "new" | null>(() => (focusId ? buyers.find((b) => b.id === focusId) ?? null : null));
   const [importing, setImporting] = React.useState(false);
+  const { plan, openUpgrade } = useApp();
   const rows = buyers.filter((b) => `${b.firm_name} ${b.contact_name} ${b.states.join(" ")}`.toLowerCase().includes(q.toLowerCase()));
 
   return (
-    <ProLock feature="Buyer CRM">
+    <>
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <div className="relative min-w-0 flex-1 sm:max-w-sm">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
           <Input aria-label="Search buyers" className="pl-9" placeholder="Search firm, contact or state" value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
         <div className="ml-auto flex flex-wrap gap-2">
-          <Button variant="secondary" asChild><a href="/api/export/buyers"><Download /> Export CSV</a></Button>
+          {PLANS[plan].features.csvExport ? (
+            <Button variant="secondary" asChild><a href="/api/export/buyers" download><Download /> Export CSV</a></Button>
+          ) : (
+            <Button variant="secondary" onClick={() => openUpgrade("CSV export comes with Firm and Fund.", "firm")}><Download /> Export CSV</Button>
+          )}
           <Button variant="secondary" onClick={() => setImporting(true)}><FileUp /> Import CSV</Button>
           <Button onClick={() => setEditing("new")}><Plus /> Add buyer</Button>
         </div>
@@ -46,7 +52,7 @@ export function BuyerCrm({ buyers, focusId }: { buyers: Buyer[]; focusId: string
                   <th className="px-4 py-3 font-medium">Buyer</th>
                   <th className="px-4 py-3 font-medium">States</th>
                   <th className="px-4 py-3 font-medium">Price range</th>
-                  <th className="px-4 py-3 font-medium">NRSF</th>
+                  <th className="px-4 py-3 font-medium">Size (sq ft)</th>
                   <th className="px-4 py-3 font-medium">Wants</th>
                   <th className="px-4 py-3 font-medium">Assignments</th>
                   <th className="px-4 py-3" />
@@ -77,7 +83,7 @@ export function BuyerCrm({ buyers, focusId }: { buyers: Buyer[]; focusId: string
 
       {editing ? <BuyerDialog buyer={editing === "new" ? null : editing} onClose={() => setEditing(null)} /> : null}
       {importing ? <ImportDialog onClose={() => setImporting(false)} /> : null}
-    </ProLock>
+    </>
   );
 }
 
@@ -131,8 +137,8 @@ function BuyerDialog({ buyer, onClose }: { buyer: Buyer | null; onClose: () => v
           <Field label="States" htmlFor="b-states" hint="Comma separated, e.g. TX, OK. Leave blank for any."><Input id="b-states" value={v.states} onChange={(e) => setV({ ...v, states: e.target.value.toUpperCase() })} /></Field>
           <Field label="Min price" htmlFor="b-minp"><NumberInput id="b-minp" prefix="$" value={v.min_price} onChange={(x) => setV({ ...v, min_price: x })} /></Field>
           <Field label="Max price" htmlFor="b-maxp"><NumberInput id="b-maxp" prefix="$" value={v.max_price} onChange={(x) => setV({ ...v, max_price: x })} /></Field>
-          <Field label="Min NRSF" htmlFor="b-mins"><NumberInput id="b-mins" value={v.min_nrsf} onChange={(x) => setV({ ...v, min_nrsf: x })} /></Field>
-          <Field label="Max NRSF" htmlFor="b-maxs"><NumberInput id="b-maxs" value={v.max_nrsf} onChange={(x) => setV({ ...v, max_nrsf: x })} /></Field>
+          <Field label="Min size (sq ft)" htmlFor="b-mins"><NumberInput id="b-mins" value={v.min_nrsf} onChange={(x) => setV({ ...v, min_nrsf: x })} /></Field>
+          <Field label="Max size (sq ft)" htmlFor="b-maxs"><NumberInput id="b-maxs" value={v.max_nrsf} onChange={(x) => setV({ ...v, max_nrsf: x })} /></Field>
           <fieldset className="sm:col-span-2">
             <legend className="mb-1.5 text-[13px] font-medium text-muted">Property types</legend>
             <div className="flex flex-wrap gap-2">

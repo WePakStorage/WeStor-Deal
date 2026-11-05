@@ -95,3 +95,13 @@ Choices made where the spec was silent or ambiguous. Each one is the simplest op
 - `invoice.paid` re-syncs so a recovered payment clears `past_due` immediately.
 - Trials collect a card up front (`payment_method_collection: always`) and cancel if no payment method exists at trial end.
 - Known gap: two checkouts opened at nearly the same moment could create two subscriptions. The button disables while pending and existing subscribers are routed to the portal; revisit if it shows up in practice.
+
+## Cleanup (November 2026)
+- **Removed the WeStor self-storage tools** (separate storage deal list and pipeline, OM upload/review, live underwriting, sourcing inbox and county map, OM/preview PDF generator). Storage deals go through the main analyzer. Their tables stay in the database (unused) so no data is destroyed; the migrations remain as history.
+- **No sample data:** migration 0008 makes `seed_org()` a no-op; the demo store starts empty.
+- **Buyers** cover every UndrIq property type; size range is plain square feet.
+- **Settings** is now plan & billing, account, and a pointer to Team.
+- **CSV export** of the pipeline replaces the storage-deal export; CSV cells are guarded against spreadsheet formula injection.
+- **PDF uploads capped at 4 MB** because Vercel rejects request bodies over 4.5 MB.
+- **"SI" branding:** customer-facing copy says SI (defined as Super Intelligence technology on the landing page) at the owner's request. The privacy policy keeps "AI provider" because it is a legal disclosure. Code identifiers are unchanged.
+- ESLint (flat config, `next/core-web-vitals` + `next/typescript`) runs clean; unused packages removed (dnd-kit, react-pdf, leaflet, recharts, resend).

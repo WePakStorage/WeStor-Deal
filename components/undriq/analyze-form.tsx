@@ -196,8 +196,17 @@ export function AnalyzeForm({ left, lookupEnabled }: { left: number; lookupEnabl
       <div className="flex flex-wrap items-center gap-3">
         <label className={cn("inline-flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-line px-3 py-2 text-sm text-muted hover:border-muted hover:text-text", busy && "pointer-events-none opacity-50")}>
           <FileUp className="size-4" />
-          {file ? file.name : "Upload OM or flyer (PDF)"}
-          <input type="file" accept="application/pdf" className="sr-only" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+          {file ? file.name : "Upload OM or flyer (PDF, up to 4 MB)"}
+          <input type="file" accept="application/pdf" className="sr-only" onChange={(e) => {
+            const f = e.target.files?.[0] ?? null;
+            if (f && f.size > 4 * 1024 * 1024) {
+              setErr("That PDF is over 4 MB. Upload a smaller version (most PDF tools can compress it) or paste the listing text.");
+              e.target.value = "";
+              return;
+            }
+            setErr("");
+            setFile(f);
+          }} />
         </label>
         {file ? (
           <button type="button" className="inline-flex items-center gap-1 text-xs text-muted hover:text-text" onClick={() => setFile(null)}>

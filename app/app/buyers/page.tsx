@@ -1,20 +1,20 @@
 import { BuyerCrm } from "@/components/buyers/buyer-crm";
+import { UpgradeCard } from "@/components/undriq/upgrade-card";
 import { PageHeader } from "@/components/ui/primitives";
 import { requireContext } from "@/lib/server/context";
-import { isPro } from "@/lib/server/gate";
-import { seedBuyers } from "@/lib/seed";
 
 export const metadata = { title: "Buyers" };
 
 export default async function BuyersPage({ searchParams }: { searchParams: Promise<{ b?: string }> }) {
   const { b } = await searchParams;
-  const { store, orgId } = await requireContext();
-  const pro = await isPro();
-  // Free users see sample rows behind the lock; real data never leaves the server for them.
-  const buyers = pro ? await store.listBuyers(orgId) : seedBuyers(orgId);
+  const { store, orgId, plan, space } = await requireContext();
+  if (!plan.features.buyers) {
+    return <UpgradeCard title="Your buyer list" body="Keep every buyer's buy box in one place. Each deal you analyze is ranked against them, so you know who to send it to." min="investor" />;
+  }
+  const buyers = await store.listBuyers(orgId);
   return (
     <>
-      <PageHeader title="Buyers" description="Your buyer list and buy boxes. Every deal is ranked against them automatically." />
+      <PageHeader title="Buyers" description={space.kind === "personal" ? "Your private buyer list. Every deal you analyze is ranked against these buy boxes." : `Shared with everyone in ${space.name}. Every deal is ranked against these buy boxes.`} />
       <BuyerCrm buyers={buyers} focusId={b ?? null} />
     </>
   );

@@ -7,7 +7,7 @@ export const GET = () =>
   handle(
     async ({ store, orgId }) => {
       const buyers = await store.listBuyers(orgId);
-      return csvResponse(toCsv(buyers as unknown as Record<string, unknown>[], COLUMNS), "westor-buyers.csv");
+      return csvResponse(toCsv(buyers as unknown as Record<string, unknown>[], COLUMNS), "undriq-buyers.csv");
     },
     { feature: "csvExport" },
   );

@@ -18,7 +18,7 @@ export default function Pricing() {
           <p><span className="font-medium text-text">Teams on Firm and Fund.</span> The owner&apos;s plan powers the team: Firm gets 1 team of 5, Fund gets 3 teams of up to 15. Members don&apos;t need their own paid plan.</p>
           <p><span className="font-medium text-text">Billing by Stripe.</span> Change or cancel any time from Billing. Your data stays; paid features lock until you resubscribe.</p>
           <p><span className="font-medium text-text">Free trial.</span> Investor and Firm start with 7 days free on your first subscription. Cancel before day 7 and you aren&apos;t charged.</p>
-          <p><span className="font-medium text-text">Fair use on Fund.</span> Up to 1,000 AI analyses a month. The bulk analyzer doesn&apos;t count against it.</p>
+          <p><span className="font-medium text-text">Fair use on Fund.</span> Up to 1,000 SI analyses a month. The bulk analyzer doesn&apos;t count against it.</p>
         </div>
       </main>
       <SiteFooter />

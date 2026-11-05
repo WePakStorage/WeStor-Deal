@@ -1,52 +1,102 @@
 import type { Plan, Subscription } from "../types";
 
 /**
- * Plan config. To add a tier later: create the Stripe price, add a row here,
- * and widen the Plan type. Feature checks read `features`, never the plan name.
+ * Plan config. Feature checks read `features`, never the plan name.
+ * To add a tier: create the Stripe price, add a row here, widen Plan, and widen the
+ * subscriptions.plan check constraint in a migration.
  */
 export interface PlanConfig {
   id: Plan;
   name: string;
   priceMonthly: number;
   stripePriceEnv: string | null;
-  dealLimit: number | null;
+  /** AI analyses per period. Scout's are lifetime; paid plans reset each calendar month (UTC). */
+  analyses: number;
+  analysesPeriod: "lifetime" | "month";
+  /** People in a team space owned by this plan (owner included). 1 means no team space. */
   seats: number;
+  /** Legacy self-storage deal limit (null = unlimited). */
+  dealLimit: number | null;
+  rank: number;
+  blurb: string;
+  bullets: string[];
   features: {
+    /** Full exit matrix, offer ladder, stress test, memo (Scout gets the score and best exit only). */
+    fullAnalysis: boolean;
+    pipeline: boolean;
+    offers: boolean;
+    buyers: boolean;
+    csvExport: boolean;
+    teamSpace: boolean;
+    bulk: boolean;
+    buyBoxRules: boolean;
+    /** Legacy self-storage tools (OM reader, live underwriting, sourcing). */
     liveUnderwriting: boolean;
     omReader: boolean;
-    buyers: boolean;
     docs: boolean;
-    csvExport: boolean;
     sourcing: boolean;
   };
 }
 
+const none = { fullAnalysis: false, pipeline: false, offers: false, buyers: false, csvExport: false, teamSpace: false, bulk: false, buyBoxRules: false, liveUnderwriting: false, omReader: false, docs: false, sourcing: false };
+const investor = { ...none, fullAnalysis: true, pipeline: true, offers: true, buyers: true, liveUnderwriting: true, omReader: true, docs: true, sourcing: true };
+
 export const PLANS: Record<Plan, PlanConfig> = {
   free: {
-    id: "free",
-    name: "Free",
-    priceMonthly: 0,
-    stripePriceEnv: null,
-    dealLimit: 3,
-    seats: 1,
-    features: { liveUnderwriting: false, omReader: false, buyers: false, docs: false, csvExport: false, sourcing: false },
+    id: "free", name: "Scout", priceMonthly: 0, stripePriceEnv: null, analyses: 2, analysesPeriod: "lifetime", seats: 1, dealLimit: 3, rank: 0,
+    blurb: "See what UndrIq finds on your own deals.",
+    bullets: ["2 AI deal analyses", "Deal score, verdict and best exit", "Every asset class"],
+    features: none,
   },
-  pro: {
-    id: "pro",
-    name: "WeStor Pro",
-    priceMonthly: 49,
-    stripePriceEnv: "STRIPE_PRICE_PRO_MONTHLY",
-    dealLimit: null,
-    seats: 3,
-    features: { liveUnderwriting: true, omReader: true, buyers: true, docs: true, csvExport: true, sourcing: true },
+  investor: {
+    id: "investor", name: "Investor", priceMonthly: 49, stripePriceEnv: "STRIPE_PRICE_INVESTOR", analyses: 40, analysesPeriod: "month", seats: 1, dealLimit: null, rank: 1,
+    blurb: "For investors and wholesalers working deals every week.",
+    bullets: ["40 AI analyses a month", "Private pipeline and buyer list", "Exit matrix, offer ladder, stress test", "Offer generator: LOI, email, text"],
+    features: investor,
+  },
+  firm: {
+    id: "firm", name: "Firm", priceMonthly: 149, stripePriceEnv: "STRIPE_PRICE_FIRM", analyses: 200, analysesPeriod: "month", seats: 5, dealLimit: null, rank: 2,
+    blurb: "For acquisition teams running volume.",
+    bullets: ["200 AI analyses a month", "Everything in Investor", "Shared team space for up to 5", "CSV export of pipeline and buyers"],
+    features: { ...investor, csvExport: true, teamSpace: true },
+  },
+  fund: {
+    id: "fund", name: "Fund", priceMonthly: 399, stripePriceEnv: "STRIPE_PRICE_FUND", analyses: 1000, analysesPeriod: "month", seats: 15, dealLimit: null, rank: 3,
+    blurb: "For teams that move volume and sell deals to buyers.",
+    bullets: ["Unlimited analyses (fair use, 1,000 a month)", "Everything in Firm", "Team space for up to 15", "Bulk analyzer and your own buy box rules"],
+    features: { ...investor, csvExport: true, teamSpace: true, bulk: true, buyBoxRules: true },
   },
 };
 
-/** Stripe statuses that keep paid access. past_due stays Pro through Stripe's retry window. */
+export const PAID_PLANS = ["investor", "firm", "fund"] as const satisfies readonly Plan[];
+export type PaidPlan = (typeof PAID_PLANS)[number];
+export const isPaidPlan = (p: unknown): p is PaidPlan => typeof p === "string" && (PAID_PLANS as readonly string[]).includes(p);
+
+/** Stripe statuses that keep paid access. past_due stays on through Stripe's retry window. */
 const PAID_STATUSES = new Set(["active", "trialing", "past_due"]);
 
 export function effectivePlan(sub: Pick<Subscription, "plan" | "status">): Plan {
-  return sub.plan !== "free" && PAID_STATUSES.has(sub.status) ? sub.plan : "free";
+  return sub.plan !== "free" && PAID_STATUSES.has(sub.status) && sub.plan in PLANS ? sub.plan : "free";
 }
 
 export const planFor = (sub: Pick<Subscription, "plan" | "status">) => PLANS[effectivePlan(sub)];
+
+/** Higher of two plans. A team space runs on the better of its own subscription and its owner's. */
+export const maxPlan = (a: Plan, b: Plan): Plan => (PLANS[a].rank >= PLANS[b].rank ? a : b);
+
+/** Start of the current quota window, as an ISO string. */
+export function quotaWindowStart(plan: PlanConfig, now = new Date()): string {
+  if (plan.analysesPeriod === "lifetime") return new Date(0).toISOString();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+}
+
+/** Map a Stripe price ID to a plan using the env vars. Unknown prices are null (never guess a tier). */
+export function planForPriceId(priceId: string, envs: Record<string, string | undefined> = process.env): PaidPlan | null {
+  for (const p of PAID_PLANS) {
+    const key = PLANS[p].stripePriceEnv;
+    if (key && envs[key] && envs[key] === priceId) return p;
+  }
+  // Legacy single-tier price from the WeStor build maps to Investor.
+  if (envs.STRIPE_PRICE_PRO_MONTHLY && envs.STRIPE_PRICE_PRO_MONTHLY === priceId) return "investor";
+  return null;
+}

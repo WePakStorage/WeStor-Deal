@@ -26,5 +26,5 @@ export const GET = () =>
       }));
       return csvResponse(toCsv(rows), "westor-deals.csv");
     },
-    { pro: true },
+    { feature: "csvExport" },
   );

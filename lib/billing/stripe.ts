@@ -1,5 +1,6 @@
 import "server-only";
 import Stripe from "stripe";
+import { PLANS, type PaidPlan } from "./plans";
 
 let client: Stripe | null = null;
 export function stripe(): Stripe {
@@ -8,8 +9,10 @@ export function stripe(): Stripe {
   return (client ??= new Stripe(key));
 }
 
-export function proPriceId(): string {
-  const id = process.env.STRIPE_PRICE_PRO_MONTHLY;
-  if (!id) throw new Error("STRIPE_PRICE_PRO_MONTHLY is not set");
+/** Stripe price ID for a paid tier. Investor falls back to the legacy single-tier price. */
+export function priceIdFor(plan: PaidPlan): string {
+  const key = PLANS[plan].stripePriceEnv!;
+  const id = process.env[key] || (plan === "investor" ? process.env.STRIPE_PRICE_PRO_MONTHLY : undefined);
+  if (!id) throw new Error(`${key} is not set`);
   return id;
 }

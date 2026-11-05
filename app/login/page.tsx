@@ -15,8 +15,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       <div className="w-full max-w-sm">
         <Link href="/" className="mb-8 flex justify-center"><BrandMark /></Link>
         <div className="rounded-2xl border border-line bg-surface p-7 shadow-panel">
-          <h1 className="text-xl font-semibold tracking-tight">Sign in to DealFlow</h1>
-          <p className="mt-1 text-sm text-muted">New here? Signing in creates your account.</p>
+          <h1 className="text-xl font-semibold tracking-tight">Sign in or create your account</h1>
+          <p className="mt-1 text-sm text-muted">New here? Signing in with your email creates your free account with 2 analyses.</p>
           <LoginForm demo={demo} next={sp.next ?? "/app"} />
           {sp.error ? <p className="mt-4 text-sm text-stop">{sp.error}</p> : null}
         </div>

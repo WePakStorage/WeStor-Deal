@@ -13,7 +13,7 @@ export function ThemeToggle() {
     setTheme(next);
     document.documentElement.dataset.theme = next;
     try {
-      localStorage.setItem("westor-theme", next);
+      localStorage.setItem("undriq-theme", next);
     } catch {
       // storage can be blocked; the theme still applies for this visit
     }

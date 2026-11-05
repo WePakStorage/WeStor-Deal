@@ -1,14 +1,15 @@
 import "server-only";
 import { NextResponse } from "next/server";
 import { getContext, type Ctx } from "./context";
-import { requirePro } from "./gate";
+import { requireFeature, type Feature } from "./gate";
 
 /** Route-handler wrapper: auth, optional Pro gate (402), JSON errors. */
-export async function handle(fn: (ctx: Ctx) => Promise<Response>, opts: { pro?: boolean } = {}): Promise<Response> {
+export async function handle(fn: (ctx: Ctx) => Promise<Response>, opts: { pro?: boolean; feature?: Feature } = {}): Promise<Response> {
   try {
     const ctx = await getContext();
     if (!ctx) return NextResponse.json({ error: "Sign in to continue." }, { status: 401 });
-    if (opts.pro) await requirePro(ctx.store, ctx.orgId);
+    if (opts.pro) requireFeature(ctx, "liveUnderwriting");
+    if (opts.feature) requireFeature(ctx, opts.feature);
     return await fn(ctx);
   } catch (e) {
     const err = e as Error & { status?: number };

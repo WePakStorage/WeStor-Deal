@@ -60,7 +60,7 @@ export function NewDealForm({ remaining }: { remaining: number | null }) {
     return (
       <Card className="p-6">
         <div className="font-medium">You&apos;ve used the 3 deals on the Free plan</div>
-        <p className="mt-1 text-sm text-muted">Upgrade to WeStor Pro for unlimited deals, live underwriting and the OM reader.</p>
+        <p className="mt-1 text-sm text-muted">Upgrade to Investor for unlimited deals, live underwriting and the OM reader.</p>
         <Button className="mt-4" variant="gold" onClick={() => openUpgrade()}>Unlock for $49/month</Button>
       </Card>
     );

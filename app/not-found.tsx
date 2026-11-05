@@ -8,7 +8,7 @@ export default function NotFound() {
         <div className="text-sm text-muted">404</div>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight">We couldn&apos;t find that page</h1>
         <p className="mt-2 text-muted">The deal may have been removed, or the link is out of date.</p>
-        <Button asChild className="mt-6"><Link href="/app">Back to pipeline</Link></Button>
+        <Button asChild className="mt-6"><Link href="/app">Back to UndrIq</Link></Button>
       </div>
     </div>
   );

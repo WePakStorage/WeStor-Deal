@@ -63,7 +63,7 @@ function fresh(): DB {
         defaults: DEFAULT_ASSUMPTIONS,
       },
     ],
-    profiles: [{ user_id: DEMO_USER_ID, org_id: DEMO_ORG_ID, full_name: "Sheldrick Redwine", email: "demo@westor.app", role: "owner" }],
+    profiles: [{ user_id: DEMO_USER_ID, org_id: DEMO_ORG_ID, full_name: "Sheldrick Redwine", email: "demo@undriq.app", role: "owner" }],
     subscriptions: [{ org_id: DEMO_ORG_ID, stripe_customer_id: null, stripe_subscription_id: null, plan: "free", status: "none", current_period_end: null }],
     deals: seedDeals(DEMO_ORG_ID),
     financials: seedFinancials(),
@@ -295,3 +295,10 @@ export const memoryStore: Store = {
 export function resetDemoStore() {
   g.__westorDemoDb = fresh();
 }
+
+/** Demo-only handles for the UndrIq space store (lib/data/uq-memory.ts). */
+export const demoTables = {
+  orgs: () => db().orgs,
+  subscriptions: () => db().subscriptions,
+  profiles: () => db().profiles,
+};

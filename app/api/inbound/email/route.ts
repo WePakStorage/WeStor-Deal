@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { z } from "zod";
-import { planFor } from "@/lib/billing/plans";
+import { spacePlanFor } from "@/lib/server/gate";
 import { getAdminStore } from "@/lib/server/context";
 import { inboundToken } from "@/lib/sourcing/alerts";
 import { ingestAlert } from "@/lib/sourcing/ingest";
@@ -42,7 +42,7 @@ export async function POST(req: Request) {
   const store = getAdminStore();
   const org = await store.findOrgByInboundToken(token);
   if (!org) return NextResponse.json({ error: "Unknown inbox" }, { status: 404 });
-  if (!planFor(await store.getSubscription(org.id)).features.sourcing) return NextResponse.json({ error: "Listing alerts need WeStor Pro" }, { status: 402 });
+  if (!(await spacePlanFor(org.id)).features.sourcing) return NextResponse.json({ error: "Listing alerts need a paid UndrIq plan" }, { status: 402 });
 
   const text = email.text || (email.html ? stripHtml(email.html) : "");
   const result = await ingestAlert(store, org.id, { subject: email.subject, text }, "Listing alert");

@@ -23,7 +23,7 @@ export function DocumentsTab({ bundle, omGate }: { bundle: DealBundle; omGate: {
   const dealId = bundle.deal.id;
 
   async function generate(kind: "preview" | "om") {
-    if (!isPro) return openUpgrade(kind === "om" ? "Branded OMs are part of WeStor Pro." : "Pre-contract previews are part of WeStor Pro.");
+    if (!isPro) return openUpgrade(kind === "om" ? "Branded OMs are part of the Investor plan." : "Pre-contract previews are part of the Investor plan.");
     setBusy(kind);
     if (kind === "om" && narrative !== (bundle.narrative ?? "")) await saveNarrative(dealId, narrative);
     const res = await fetch(`/api/deals/${dealId}/generate`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ kind }) });

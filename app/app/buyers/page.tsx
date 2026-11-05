@@ -9,7 +9,7 @@ export const metadata = { title: "Buyers" };
 export default async function BuyersPage({ searchParams }: { searchParams: Promise<{ b?: string }> }) {
   const { b } = await searchParams;
   const { store, orgId } = await requireContext();
-  const pro = await isPro(store, orgId);
+  const pro = await isPro();
   // Free users see sample rows behind the lock; real data never leaves the server for them.
   const buyers = pro ? await store.listBuyers(orgId) : seedBuyers(orgId);
   return (

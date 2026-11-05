@@ -62,3 +62,16 @@ Choices made where the spec was silent or ambiguous. Each one is the simplest op
 ## Design
 - Dark "ink" is the default theme, and light is a toggle (saved per browser). A champagne **gold** accent is used sparingly (brand mark, Pro, binding constraint) for the premium feel. Door blue stays the primary action color, as in the spec.
 - I didn't receive the `westor-dealflow.jsx` prototype, so the UI follows the written design system in section 7.
+
+
+## UndrIq (November 2026)
+- **Spaces are orgs.** Every user owns one `personal` org; Firm/Fund owners create `team` orgs. `profiles.org_id` is the *active* space and `auth_org_id()` only returns it while the caller is still a member, so every existing RLS policy scopes to the active space unchanged. Switching goes through `switch_space()`; users can no longer update `profiles.org_id`/`role` or `orgs.kind`/`owner_user_id` (column grants).
+- **Team plan = the better of the team's own subscription and its owner's personal plan.** Billing is always on the person's private space, so one Firm/Fund subscription powers every team the owner creates (max 3). Members need no paid plan. If the owner downgrades, members stay but paid features pause and nobody new can join.
+- **Seats** (Firm 5, Fund 15, owner included, pending invites count) are enforced by a trigger on both `org_members` and `org_invites`, and mirrored in the demo store.
+- **Invites by email**, not shareable codes: existing users join immediately, new emails join on sign-up (`handle_new_user`). This replaces the artifact's code-based teams, whose privacy relied on an unguessable code.
+- **Quotas** count `usage_events` of kind `analysis` in the active space: Scout's 2 are lifetime, paid plans reset on the 1st (UTC). In a team space the team's quota is shared. The bulk analyzer runs the engine only and doesn't spend analyses.
+- **Scout never receives the full result.** For Scout the stored row holds only the teaser, so even a direct Supabase read can't reveal it. Paid plans re-compute from stored facts on every view, so buy box changes apply to old deals.
+- **AI reads and writes, code computes.** The read step merges the model's JSON with a deterministic regex read (AI wins where it found a value); the memo gets only computed numbers. If either AI step fails, the analysis still completes with the deterministic read and a computed memo.
+- **No scraping.** A listing URL only pre-fills the address from its own path.
+- **Fixed a pre-existing bug** in `seed_org()`: it inserted a Postgres array into the `jsonb` expenses column, which would have failed every sign-up. `scripts/gen-seed-sql.mts` now writes JSON, and migration 0004 re-creates the function for databases that already ran 0002.
+- Migrations were tested against Postgres 16 with a stub of Supabase's `auth` schema: privacy between spaces, blocked escalation attempts (profile/org column updates, direct membership inserts, subscription writes), seat limits, leaving, downgrade and Fund-only buy box.

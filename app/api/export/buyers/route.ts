@@ -9,5 +9,5 @@ export const GET = () =>
       const buyers = await store.listBuyers(orgId);
       return csvResponse(toCsv(buyers as unknown as Record<string, unknown>[], COLUMNS), "westor-buyers.csv");
     },
-    { pro: true },
+    { feature: "csvExport" },
   );

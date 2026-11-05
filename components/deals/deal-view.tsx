@@ -64,8 +64,8 @@ export function DealView({ bundle, defaults, matches, omGate, initialTab }: {
 
   return (
     <>
-      <Link href="/app" className="mb-5 inline-flex items-center gap-1.5 text-sm text-muted hover:text-text">
-        <ArrowLeft className="size-4" /> Pipeline
+      <Link href="/app/storage" className="mb-5 inline-flex items-center gap-1.5 text-sm text-muted hover:text-text">
+        <ArrowLeft className="size-4" /> Storage pipeline
       </Link>
       <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">

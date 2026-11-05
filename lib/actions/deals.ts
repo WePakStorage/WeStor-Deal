@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { planFor } from "../billing/plans";
 import { planStageMove } from "../pipeline";
 import { dealInputSchema, dealPatchSchema, financialSchema, unitMixSchema, type DealInput } from "../schemas";
 import { HttpError, run } from "../server/run";
@@ -10,11 +9,10 @@ import { STAGES, type Deal, type Stage } from "../types";
 import type { ActionResult } from "./result";
 
 export async function createDeal(input: DealInput): Promise<ActionResult<{ id: string }>> {
-  return run(async ({ store, orgId, user }) => {
+  return run(async ({ store, orgId, user, plan }) => {
     const v = dealInputSchema.parse(input);
-    const plan = planFor(await store.getSubscription(orgId));
     if (plan.dealLimit !== null && (await store.countUserDeals(orgId)) >= plan.dealLimit) {
-      throw new HttpError(402, `The Free plan includes ${plan.dealLimit} deals. Upgrade to WeStor Pro for unlimited deals.`);
+      throw new HttpError(402, `The Scout plan includes ${plan.dealLimit} deals. Upgrade to Investor for unlimited deals.`);
     }
     // New deals cannot be created directly into contract stages: the contract modal must record it.
     const stage: Stage = v.stage === "under_contract" || v.stage === "assigned" ? "negotiating" : v.stage;

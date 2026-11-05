@@ -1,5 +1,5 @@
 /**
- * WeStor DealFlow underwriting engine.
+ * Underwriting engine (shared by UndrIq and the self-storage tools).
  *
  * Every money calculation in the product lives here. The UI and API routes
  * call these pure functions and never do their own finance math.

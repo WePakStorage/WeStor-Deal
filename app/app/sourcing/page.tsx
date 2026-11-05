@@ -7,7 +7,7 @@ export const metadata = { title: "Sourcing" };
 
 export default async function SourcingPage() {
   const { store, orgId } = await requireContext();
-  const [pro, org] = await Promise.all([isPro(store, orgId), store.getOrg(orgId)]);
+  const [pro, org] = await Promise.all([isPro(), store.getOrg(orgId)]);
   const candidates = pro ? await store.listCandidates(orgId) : [];
   const domain = process.env.RESEND_INBOUND_DOMAIN || "inbound.westor.app";
   return (

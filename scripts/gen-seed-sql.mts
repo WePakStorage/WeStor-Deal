@@ -11,6 +11,8 @@ const q = (v: unknown): string => {
   if (typeof v === "object") return `'${JSON.stringify(v).replace(/'/g, "''")}'::jsonb`;
   return `'${String(v).replace(/'/g, "''")}'`;
 };
+// jsonb columns (deal_financials.expenses) take a JSON literal, never a Postgres array.
+const jq = (v: unknown): string => `'${JSON.stringify(v ?? null).replace(/'/g, "''")}'::jsonb`;
 
 const ORG = "00000000-0000-0000-0000-000000000000";
 const deals = seedDeals(ORG);
@@ -27,7 +29,7 @@ deals.forEach((d, i) => {
 });
 const idx = (dealId: string) => deals.findIndex((d) => d.id === dealId);
 for (const f of seedFinancials()) {
-  lines.push(`  insert into deal_financials(org_id, deal_id, period, period_label, potential_rent, vacancy, other_income, egi, expenses, total_expenses, noi, source) values (target, d${idx(f.deal_id)}, ${[f.period, f.period_label, f.potential_rent, f.vacancy, f.other_income, f.egi, f.expenses, f.total_expenses, f.noi, f.source].map(q).join(", ")});`);
+  lines.push(`  insert into deal_financials(org_id, deal_id, period, period_label, potential_rent, vacancy, other_income, egi, expenses, total_expenses, noi, source) values (target, d${idx(f.deal_id)}, ${[f.period, f.period_label, f.potential_rent, f.vacancy, f.other_income, f.egi].map(q).join(", ")}, ${jq(f.expenses)}, ${[f.total_expenses, f.noi, f.source].map(q).join(", ")});`);
 }
 for (const u of seedUnitMix()) {
   lines.push(`  insert into unit_mix(org_id, deal_id, unit_type, width, depth, count, occupied, street_rent, in_place_rent, climate) values (target, d${idx(u.deal_id)}, ${[u.unit_type, u.width, u.depth, u.count, u.occupied, u.street_rent, u.in_place_rent, u.climate].map(q).join(", ")});`);
@@ -37,5 +39,8 @@ for (const b of seedBuyers(ORG)) {
 }
 lines.push("end $$;");
 lines.push("");
-writeFileSync("supabase/migrations/20261104000002_seed_org.sql", lines.join("\n"));
+const sql = lines.join("\n");
+// 0002 is the original seed; 0004 re-creates the function so databases that already ran 0002 get the jsonb fix.
+writeFileSync("supabase/migrations/20261104000002_seed_org.sql", sql);
+writeFileSync("supabase/migrations/20261105000004_seed_org_fix.sql", sql);
 console.log("wrote seed_org migration");

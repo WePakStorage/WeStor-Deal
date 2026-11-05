@@ -18,7 +18,7 @@ export default async function DealPage({ params, searchParams }: { params: Promi
   const { id } = await params;
   const { tab } = await searchParams;
   const { store, orgId } = await requireContext();
-  const [bundle, org, pro] = await Promise.all([store.getDealBundle(orgId, id), store.getOrg(orgId), isPro(store, orgId)]);
+  const [bundle, org, pro] = await Promise.all([store.getDealBundle(orgId, id), store.getOrg(orgId), isPro()]);
   if (!bundle) notFound();
 
   // Deals entered by hand (or seeded) have no stored OM flags: run the same checks on saved data.

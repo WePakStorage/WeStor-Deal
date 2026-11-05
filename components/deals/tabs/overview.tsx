@@ -190,7 +190,7 @@ function UnitMixCard({ dealId, rows }: { dealId: string; rows: UnitMixRow[] }) {
               }}>Save</Button>
             </div>
           ) : (
-            <Button size="sm" variant="ghost" onClick={() => (isPro ? setEditing(true) : openUpgrade("Editing the unit mix is part of WeStor Pro."))}><Pencil /> Edit</Button>
+            <Button size="sm" variant="ghost" onClick={() => (isPro ? setEditing(true) : openUpgrade("Editing the unit mix is part of the Investor plan."))}><Pencil /> Edit</Button>
           )
         }
       />

@@ -28,7 +28,8 @@ export function Analytics() {
 
 export type AnalyticsEvent =
   | "signed_up" | "deal_created" | "om_uploaded" | "om_parsed" | "paywall_viewed" | "checkout_started"
-  | "subscribed" | "buyer_imported" | "preview_generated" | "om_generated" | "subscription_cancelled";
+  | "subscribed" | "buyer_imported" | "preview_generated" | "om_generated" | "subscription_cancelled"
+  | "analysis_started" | "analysis_completed" | "offer_saved" | "team_created" | "bulk_scored";
 
 export function track(event: AnalyticsEvent, props?: Record<string, unknown>) {
   if (key && started) posthog.capture(event, props);

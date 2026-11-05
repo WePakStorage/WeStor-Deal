@@ -2,106 +2,129 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Check, Lock, Sparkles } from "lucide-react";
+import { Check, Lock } from "lucide-react";
 import { Dialog, DialogContent, ToastProvider, useToast } from "@/components/ui/interactive";
 import { Button } from "@/components/ui/primitives";
-import { startCheckout, demoSetPlan } from "@/lib/actions/billing";
+import { demoSetPlan, startCheckout } from "@/lib/actions/billing";
+import { PAID_PLANS, PLANS, type PaidPlan } from "@/lib/billing/plans";
+import type { Plan } from "@/lib/types";
 import { track } from "@/components/analytics";
 
 interface AppState {
+  /** Plan of the active space. */
+  plan: Plan;
+  /** Any paid plan (legacy self-storage tools). */
   isPro: boolean;
   demo: boolean;
   status: string;
-  openUpgrade: (reason?: string) => void;
+  spaceKind: "personal" | "team";
+  openUpgrade: (reason?: string, min?: PaidPlan) => void;
 }
 
-const Ctx = React.createContext<AppState>({ isPro: false, demo: false, status: "none", openUpgrade: () => {} });
+const Ctx = React.createContext<AppState>({ plan: "free", isPro: false, demo: false, status: "none", spaceKind: "personal", openUpgrade: () => {} });
 export const useApp = () => React.useContext(Ctx);
 
-const PRO_FEATURES = [
-  "Live underwriting at any price, leverage and rate",
-  "Max offer calculator with the binding constraint",
-  "AI OM reader with automatic red-flag checks",
-  "Buyer CRM, CSV import and buy-box matching",
-  "Pre-contract previews and branded OMs",
-  "Unlimited deals and CSV export",
-];
-
-export function AppProvider({ isPro, demo, status, children }: { isPro: boolean; demo: boolean; status: string; children: React.ReactNode }) {
+export function AppProvider(p: { plan: Plan; demo: boolean; status: string; spaceKind: "personal" | "team"; children: React.ReactNode }) {
   return (
     <ToastProvider>
-      <Inner isPro={isPro} demo={demo} status={status}>
-        {children}
-      </Inner>
+      <Inner {...p} />
     </ToastProvider>
   );
 }
 
-function Inner({ isPro, demo, status, children }: { isPro: boolean; demo: boolean; status: string; children: React.ReactNode }) {
+function Inner({ plan, demo, status, spaceKind, children }: { plan: Plan; demo: boolean; status: string; spaceKind: "personal" | "team"; children: React.ReactNode }) {
   const [open, setOpen] = React.useState(false);
   const [reason, setReason] = React.useState<string | undefined>();
+  const [min, setMin] = React.useState<PaidPlan>("investor");
   const [pending, start] = React.useTransition();
+  const [picked, setPicked] = React.useState<PaidPlan | null>(null);
   const toast = useToast();
   const router = useRouter();
 
-  const openUpgrade = React.useCallback((r?: string) => {
+  const openUpgrade = React.useCallback((r?: string, m: PaidPlan = "investor") => {
     setReason(r);
+    setMin(m);
     setOpen(true);
-    track("paywall_viewed", { reason: r });
+    track("paywall_viewed", { reason: r, min: m });
   }, []);
 
-  const checkout = () =>
+  const checkout = (tier: PaidPlan) =>
     start(async () => {
-      track("checkout_started");
-      const res = await startCheckout();
+      setPicked(tier);
+      track("checkout_started", { tier });
+      const res = await startCheckout(tier);
       if (!res.ok) return toast(res.error, "error");
       if (res.data.url) {
         window.location.href = res.data.url;
         return;
       }
       if (res.data.demo) {
-        const r = await demoSetPlan("pro");
+        const r = await demoSetPlan(tier);
         if (!r.ok) return toast(r.error, "error");
         setOpen(false);
-        toast("WeStor Pro unlocked (demo mode)");
+        toast(`${PLANS[tier].name} unlocked (demo mode)`);
         router.refresh();
       }
     });
 
+  const tiers = PAID_PLANS.filter((t) => PLANS[t].rank >= PLANS[min].rank);
+
   return (
-    <Ctx.Provider value={{ isPro, demo, status, openUpgrade }}>
+    <Ctx.Provider value={{ plan, isPro: PLANS[plan].features.liveUnderwriting, demo, status, spaceKind, openUpgrade }}>
       {children}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent title="Unlock WeStor Pro" description={reason ?? "Everything you need to underwrite, match and market storage deals."}>
-          <div className="rounded-xl border border-gold/30 bg-gradient-to-b from-gold/[0.07] to-transparent p-5">
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-4xl font-semibold tracking-tight tabular">$49</span>
-              <span className="text-muted">/ month</span>
-            </div>
-            <p className="mt-1 text-sm text-muted">Cancel anytime from the billing portal. Your data stays if you do.</p>
-            <ul className="mt-5 space-y-2.5">
-              {PRO_FEATURES.map((f) => (
-                <li key={f} className="flex items-start gap-2.5 text-sm">
-                  <Check className="mt-0.5 size-4 shrink-0 text-go" />
-                  {f}
-                </li>
-              ))}
-            </ul>
+        <DialogContent wide className="max-w-4xl" title="Upgrade UndrIq" description={reason ?? "Pick the plan that fits how many deals you work."}>
+          {spaceKind === "team" ? (
+            <p className="mb-4 rounded-lg border border-line bg-raised px-3 py-2 text-sm text-muted">
+              You&apos;re in a team space. Team features follow the team owner&apos;s plan; upgrading here changes your own plan and your private space.
+            </p>
+          ) : null}
+          <div className={`grid gap-3 ${tiers.length === 3 ? "md:grid-cols-3" : tiers.length === 2 ? "md:grid-cols-2" : ""}`}>
+            {tiers.map((t) => {
+              const cfg = PLANS[t];
+              const top = t === "fund";
+              return (
+                <div key={t} className={`flex flex-col rounded-xl border p-5 ${top ? "border-text bg-text text-ink" : "border-line bg-raised"}`}>
+                  <div className="text-sm font-medium uppercase tracking-wider opacity-70">{cfg.name}</div>
+                  <div className="mt-2 flex items-baseline gap-1">
+                    <span className="text-4xl font-semibold tracking-tight tabular">${cfg.priceMonthly}</span>
+                    <span className="opacity-70">/ mo</span>
+                  </div>
+                  <p className="mt-1 text-sm opacity-70">{cfg.blurb}</p>
+                  <ul className="mt-4 flex-1 space-y-2">
+                    {cfg.bullets.map((f) => (
+                      <li key={f} className="flex items-start gap-2 text-sm">
+                        <Check className="mt-0.5 size-4 shrink-0" />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                  <Button
+                    className={`mt-5 w-full ${top ? "!bg-ink !text-text" : ""}`}
+                    variant={top ? "secondary" : "primary"}
+                    onClick={() => checkout(t)}
+                    disabled={pending || plan === t}
+                  >
+                    {plan === t ? "Your plan" : pending && picked === t ? "Opening checkout…" : `Choose ${cfg.name}`}
+                  </Button>
+                </div>
+              );
+            })}
           </div>
-          <Button className="mt-5 w-full" size="lg" variant="gold" onClick={checkout} disabled={pending}>
-            <Sparkles /> {pending ? "Opening checkout…" : "Upgrade for $49/month"}
-          </Button>
-          {demo ? <p className="mt-3 text-center text-xs text-muted">Demo mode: no card is charged. Stripe Checkout runs once keys are added.</p> : null}
+          <p className="mt-4 text-center text-xs text-muted">
+            {demo ? "Demo mode: no card is charged. Stripe Checkout runs once keys are added." : "Billed monthly by Stripe. Change or cancel any time from Billing."}
+            {status === "past_due" ? " Your last payment failed; update your card in Billing." : ""}
+          </p>
         </DialogContent>
       </Dialog>
     </Ctx.Provider>
   );
 }
 
-/** Blur Pro content for free users. Cosmetic only: the server enforces access. */
-export function ProLock({ children, feature, className }: { children: React.ReactNode; feature: string; className?: string }) {
-  const { isPro, openUpgrade } = useApp();
-  if (isPro) return <>{children}</>;
+/** Blur paid content. Cosmetic only: the server strips or refuses it for lower plans. */
+export function ProLock({ children, feature, className, min = "investor" }: { children: React.ReactNode; feature: string; className?: string; min?: PaidPlan }) {
+  const { plan, openUpgrade } = useApp();
+  if (PLANS[plan].rank >= PLANS[min].rank) return <>{children}</>;
   return (
     <div className={`relative ${className ?? ""}`}>
       <div className="locked-blur" aria-hidden>
@@ -109,16 +132,14 @@ export function ProLock({ children, feature, className }: { children: React.Reac
       </div>
       <div className="absolute inset-0 grid place-items-center p-4">
         <div className="flex max-w-xs flex-col items-center gap-3 rounded-2xl border border-line bg-surface/95 px-6 py-5 text-center shadow-panel backdrop-blur">
-          <div className="grid size-10 place-items-center rounded-full bg-gold/10 text-gold">
+          <div className="grid size-10 place-items-center rounded-full bg-raised">
             <Lock className="size-4" />
           </div>
           <div>
             <div className="font-medium">{feature}</div>
-            <p className="mt-0.5 text-sm text-muted">Included with WeStor Pro.</p>
+            <p className="mt-0.5 text-sm text-muted">Included with {PLANS[min].name} and up.</p>
           </div>
-          <Button variant="gold" onClick={() => openUpgrade(`${feature} is part of WeStor Pro.`)}>
-            Unlock for $49/month
-          </Button>
+          <Button onClick={() => openUpgrade(`${feature} is part of ${PLANS[min].name}.`, min)}>See plans</Button>
         </div>
       </div>
     </div>

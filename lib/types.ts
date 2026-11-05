@@ -86,7 +86,7 @@ export interface Profile {
   role: "owner" | "member";
 }
 
-export type Plan = "free" | "pro";
+export type Plan = "free" | "investor" | "firm" | "fund";
 export interface Subscription {
   org_id: string;
   stripe_customer_id: string | null;

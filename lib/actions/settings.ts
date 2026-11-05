@@ -42,21 +42,3 @@ export async function updateDefaults(input: z.input<typeof defaultsSchema>): Pro
     return null;
   });
 }
-
-/** Invite a teammate. Seats are enforced here from the plan config. */
-export async function inviteMember(email: string, fullName: string): Promise<ActionResult> {
-  return run(
-    async ({ store, orgId, user }) => {
-      if (user.role !== "owner") throw new HttpError(403, "Only the owner can invite teammates.");
-      const e = z.string().trim().email("Enter a valid email").parse(email);
-      const plan = planFor(await store.getSubscription(orgId));
-      const members = await store.listMembers(orgId);
-      if (members.some((m) => m.email.toLowerCase() === e.toLowerCase())) throw new HttpError(409, "That person is already on your team.");
-      if (members.length >= plan.seats) throw new HttpError(402, `${plan.name} includes ${plan.seats} seats. Remove someone or contact us about a Firm plan.`);
-      await store.addMember(orgId, e, fullName.trim());
-      revalidatePath("/app/settings");
-      return null;
-    },
-    { pro: true },
-  );
-}

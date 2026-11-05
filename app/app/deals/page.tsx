@@ -9,7 +9,7 @@ export const metadata = { title: "Deals" };
 
 export default async function DealsPage() {
   const { store, orgId } = await requireContext();
-  const [deals, pro] = await Promise.all([store.listDeals(orgId), isPro(store, orgId)]);
+  const [deals, pro] = await Promise.all([store.listDeals(orgId), isPro()]);
   return (
     <>
       <PageHeader
@@ -22,7 +22,7 @@ export default async function DealsPage() {
                 <a href="/api/export/deals"><Download /> Export CSV</a>
               </Button>
             ) : (
-              <Button variant="secondary" disabled title="CSV export is part of WeStor Pro">
+              <Button variant="secondary" disabled title="CSV export comes with Firm and Fund">
                 <Download /> Export CSV
               </Button>
             )}

@@ -8,5 +8,5 @@ export const env = {
 
 export const isSupabaseConfigured = () => Boolean(env.supabaseUrl && env.supabaseAnonKey);
 export const isDemoMode = () => !isSupabaseConfigured();
-export const isStripeConfigured = () => Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PRICE_PRO_MONTHLY);
+export const isStripeConfigured = () => Boolean(process.env.STRIPE_SECRET_KEY && (process.env.STRIPE_PRICE_INVESTOR || process.env.STRIPE_PRICE_PRO_MONTHLY));
 export const isAnthropicConfigured = () => Boolean(process.env.ANTHROPIC_API_KEY);

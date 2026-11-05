@@ -1,22 +1,45 @@
 import "server-only";
-import { planFor } from "../billing/plans";
+import { PLANS, type PlanConfig } from "../billing/plans";
 import type { Store } from "../data/store";
+import { isDemoMode } from "../env";
+import { demoSpacePlan } from "../data/uq-memory";
+import { supabaseAdmin } from "../supabase/server";
+import type { Plan } from "../types";
+import { getContext, type Ctx } from "./context";
+
+export type Feature = keyof PlanConfig["features"];
 
 export class PaymentRequiredError extends Error {
   status = 402 as const;
-  constructor(message = "WeStor Pro is required for this action.") {
+  constructor(message = "Upgrade your plan to use this.") {
     super(message);
   }
 }
 
-/** Call at the top of every Pro route handler and server action. */
-export async function requirePro(store: Store, orgId: string): Promise<void> {
-  const sub = await store.getSubscription(orgId);
-  if (!planFor(sub).features.liveUnderwriting) throw new PaymentRequiredError();
+const FEATURE_PLAN: Record<Feature, string> = {
+  fullAnalysis: "Investor", pipeline: "Investor", offers: "Investor", buyers: "Investor", liveUnderwriting: "Investor", omReader: "Investor", docs: "Investor", sourcing: "Investor",
+  csvExport: "Firm", teamSpace: "Firm", bulk: "Fund", buyBoxRules: "Fund",
+};
+
+/** Server-side feature check against the ACTIVE space's plan. The client lock is cosmetic. */
+export function requireFeature(ctx: Ctx, feature: Feature): void {
+  if (!ctx.plan.features[feature]) throw new PaymentRequiredError(`This needs the ${FEATURE_PLAN[feature]} plan or higher.`);
 }
 
-export async function isPro(store: Store, orgId: string): Promise<boolean> {
-  return planFor(await store.getSubscription(orgId)).features.liveUnderwriting;
+/** Legacy name kept for the self-storage tools: any paid plan. */
+export const requirePro = (ctx: Ctx) => requireFeature(ctx, "liveUnderwriting");
+
+export async function isPro(): Promise<boolean> {
+  const ctx = await getContext();
+  return !!ctx?.plan.features.liveUnderwriting;
+}
+
+/** Plan of any space, for unauthenticated server paths (inbound email). Uses the service role. */
+export async function spacePlanFor(orgId: string): Promise<PlanConfig> {
+  if (isDemoMode()) return PLANS[demoSpacePlan(orgId)];
+  const { data, error } = await supabaseAdmin().rpc("space_plan", { target: orgId });
+  if (error) throw new Error(error.message);
+  return PLANS[(data as Plan) in PLANS ? (data as Plan) : "free"];
 }
 
 /** Simple durable rate limit for AI routes: N calls per org per hour, counted from usage_events. */

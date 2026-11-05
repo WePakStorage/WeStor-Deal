@@ -24,7 +24,7 @@ export function SiteFooter() {
         <div className="space-y-3">
           <BrandMark />
           <p className="max-w-xl text-xs leading-relaxed">
-            WeStor DealFlow provides information and calculation tools only. It is not legal, tax or investment advice, and nothing here is an offer to sell or a solicitation to buy any security. Follow your state&apos;s wholesaling and disclosure rules and have an attorney review your documents.
+            UndrIq provides information and calculation tools only. It is not legal, tax or investment advice, and nothing here is an offer to sell or a solicitation to buy any security. Follow your state&apos;s wholesaling and disclosure rules and have an attorney review your documents.
           </p>
           <p className="text-xs">© {new Date().getFullYear()} WePak Storage. A WePak WeShip LLC company.</p>
         </div>

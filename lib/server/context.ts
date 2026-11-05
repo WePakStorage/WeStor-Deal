@@ -53,11 +53,21 @@ export const getContext = cache(async (): Promise<Ctx | null> => {
   const sb = await supabaseServer();
   const { data } = await sb.auth.getUser();
   if (!data.user) return null;
-  const { data: profile } = await sb.from("profiles").select("full_name").eq("user_id", data.user.id).maybeSingle();
-  if (!profile) return null;
   const uq = supabaseUqStore(sb);
-  const r = await resolveSpaces(uq, data.user.id);
-  if (!r) return null;
+  let { data: profile } = await sb.from("profiles").select("full_name").eq("user_id", data.user.id).maybeSingle();
+  let r = profile ? await resolveSpaces(uq, data.user.id).catch(() => null) : null;
+  if (!profile || !r) {
+    // Signed in but no account yet (signed up before the database setup ran, or the sign-up trigger
+    // failed): create the profile, private space and Scout plan now, then carry on.
+    const healed = await sb.rpc("ensure_account");
+    if (healed.error) {
+      console.error("ensure_account failed (have all supabase/migrations been run?)", healed.error.message);
+      return null;
+    }
+    ({ data: profile } = await sb.from("profiles").select("full_name").eq("user_id", data.user.id).maybeSingle());
+    r = profile ? await resolveSpaces(uq, data.user.id).catch(() => null) : null;
+    if (!profile || !r) return null;
+  }
   const admin = process.env.SUPABASE_SERVICE_ROLE_KEY ? supabaseAdmin() : undefined;
   return {
     store: supabaseStore(sb, admin),

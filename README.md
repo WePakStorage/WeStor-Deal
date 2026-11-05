@@ -20,7 +20,9 @@ With no Supabase keys, the app runs on an in-memory store. Without an Anthropic 
 ## Going live
 
 1. **Supabase** (database and sign-in):
-   - Create a project. In **SQL Editor**, run every file in `supabase/migrations` in order (0001 → 0005).
+   - Create a project. In **SQL Editor**, run every file in `supabase/migrations` in order (0001 → 0007). 0007 also repairs anyone who signed up before the setup ran.
+   - Not sure what has run? This shows which steps exist (true = done):
+     `select to_regclass('public.orgs') is not null as m0001, exists(select 1 from pg_proc where proname='seed_org') as m0002, to_regclass('public.analyses') is not null as m0003, to_regclass('public.property_lookups') is not null as m0005, exists(select 1 from pg_proc where proname='ensure_account') as m0007;`
    - **Authentication → Sign In / Providers → Email**: on, with **Confirm email** on. Set the minimum password length to 8.
    - **Authentication → URL Configuration**: Site URL = `https://YOUR_DOMAIN`; Redirect URLs = `https://YOUR_DOMAIN/auth/callback` (add `http://localhost:3000/auth/callback` for local dev).
    - **Authentication → Emails → SMTP**: add your own sender (e.g. Resend SMTP). Supabase's built-in sender only sends a few emails an hour, which isn't enough for sign-up confirmations and password resets in production.

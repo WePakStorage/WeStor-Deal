@@ -2,12 +2,28 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowUp, MessageCircle, Sparkles, X } from "lucide-react";
-import { ASSISTANT_GREETING, ASSISTANT_SUGGESTIONS } from "@/lib/assistant/prompt";
+import { ArrowUp, X } from "lucide-react";
+import { ASSISTANT_GREETING, ASSISTANT_NAME, ASSISTANT_SUGGESTIONS } from "@/lib/assistant/prompt";
 import { cn } from "@/lib/cn";
 import { track } from "@/components/analytics";
 
 type Msg = { role: "user" | "assistant"; content: string };
+
+/** Photo for Jake: set NEXT_PUBLIC_ASSISTANT_AVATAR_URL to a stock photo you're licensed to use, or add /public/jake.jpg. */
+const AVATAR_URL = process.env.NEXT_PUBLIC_ASSISTANT_AVATAR_URL || "/jake.jpg";
+
+/** Round avatar with a monogram fallback if the photo is missing or fails to load. */
+function Avatar({ size = 32 }: { size?: number }) {
+  const [failed, setFailed] = React.useState(false);
+  return failed ? (
+    <span className="grid shrink-0 place-items-center rounded-full bg-text font-semibold text-ink" style={{ width: size, height: size, fontSize: size * 0.42 }} aria-hidden>
+      {ASSISTANT_NAME[0]}
+    </span>
+  ) : (
+    // eslint-disable-next-line @next/next/no-img-element -- any image host; no next/image domain config needed
+    <img src={AVATAR_URL} alt="" width={size} height={size} onError={() => setFailed(true)} className="shrink-0 rounded-full object-cover" style={{ width: size, height: size }} />
+  );
+}
 
 /** Homepage greeter: floating chat bubble backed by /api/assistant (streams plain text). */
 export function AssistantWidget() {
@@ -71,12 +87,15 @@ export function AssistantWidget() {
   return (
     <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-3 sm:bottom-6 sm:right-6">
       {open ? (
-        <section aria-label="UndrIq assistant" className="flex h-[min(560px,calc(100dvh-6rem))] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-panel animate-in">
+        <section aria-label={`${ASSISTANT_NAME}, UndrIq AI assistant`} className="flex h-[min(560px,calc(100dvh-6rem))] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-panel animate-in">
           <header className="flex items-center gap-3 border-b border-line-soft px-4 py-3">
-            <span className="grid size-8 place-items-center rounded-full bg-text text-ink"><Sparkles className="size-4" /></span>
+            <span className="relative">
+              <Avatar size={36} />
+              <span className="absolute bottom-0 right-0 size-2.5 rounded-full border-2 border-surface bg-go" aria-hidden />
+            </span>
             <div className="min-w-0 flex-1">
-              <div className="text-sm font-semibold">UndrIq assistant</div>
-              <div className="text-xs text-muted">Automated · usually answers in seconds</div>
+              <div className="text-sm font-semibold">{ASSISTANT_NAME} <span className="ml-1 rounded-full border border-line px-1.5 py-px align-middle text-[10px] font-medium text-muted">AI assistant</span></div>
+              <div className="text-xs text-muted">UndrIq · usually answers in seconds</div>
             </div>
             <button type="button" aria-label="Close chat" onClick={() => setOpen(false)} className="rounded-md p-1.5 text-muted hover:bg-raised hover:text-text"><X className="size-4" /></button>
           </header>
@@ -101,13 +120,13 @@ export function AssistantWidget() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 maxLength={1200}
-                placeholder="Ask about UndrIq…"
+                placeholder={`Ask ${ASSISTANT_NAME} about UndrIq…`}
                 className="h-10 min-w-0 flex-1 rounded-lg border border-line bg-raised px-3 text-sm placeholder:text-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-door/30"
               />
               <button type="submit" aria-label="Send" disabled={busy || !input.trim()} className="grid size-10 place-items-center rounded-lg bg-text text-ink disabled:opacity-40"><ArrowUp className="size-4" /></button>
             </form>
             <div className="mt-2 flex items-center justify-between gap-2 text-[11px] text-muted">
-              <span>Automated assistant. Not investment advice.</span>
+              <span>AI assistant. Not investment advice.</span>
               <Link href="/login?mode=signup" className="font-medium text-text hover:underline">Try a deal free →</Link>
             </div>
           </div>
@@ -115,16 +134,17 @@ export function AssistantWidget() {
       ) : teaser ? (
         <div className="max-w-[280px] rounded-2xl border border-line bg-surface p-3 text-sm shadow-panel animate-in">
           <div className="flex items-start gap-2">
+            <Avatar size={28} />
             <p className="flex-1">{ASSISTANT_GREETING}</p>
             <button type="button" aria-label="Dismiss" onClick={() => { setTeaser(false); try { sessionStorage.setItem("undriq-greeted", "1"); } catch { /* ignore */ } }} className="text-muted hover:text-text"><X className="size-3.5" /></button>
           </div>
-          <button type="button" onClick={openChat} className="mt-2 text-xs font-semibold hover:underline">Chat with me →</button>
+          <button type="button" onClick={openChat} className="mt-2 pl-9 text-xs font-semibold hover:underline">Chat with {ASSISTANT_NAME} →</button>
         </div>
       ) : null}
 
       {!open ? (
-        <button type="button" onClick={openChat} aria-label="Chat with UndrIq assistant" className="flex items-center gap-2 rounded-full bg-text px-4 py-3 text-sm font-medium text-ink shadow-panel transition hover:scale-[1.03]">
-          <MessageCircle className="size-4" /> Ask UndrIq
+        <button type="button" onClick={openChat} aria-label={`Chat with ${ASSISTANT_NAME}, UndrIq AI assistant`} className="flex items-center gap-2 rounded-full bg-text py-2 pl-2 pr-4 text-sm font-medium text-ink shadow-panel transition hover:scale-[1.03]">
+          <Avatar size={30} /> Ask {ASSISTANT_NAME}
         </button>
       ) : null}
     </div>
@@ -133,7 +153,8 @@ export function AssistantWidget() {
 
 function Bubble({ role, text, typing }: { role: "user" | "assistant"; text: string; typing?: boolean }) {
   return (
-    <div className={cn("flex", role === "user" ? "justify-end" : "justify-start")}>
+    <div className={cn("flex items-end gap-2", role === "user" ? "justify-end" : "justify-start")}>
+      {role === "assistant" ? <Avatar size={24} /> : null}
       <div className={cn("max-w-[85%] whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed", role === "user" ? "bg-text text-ink" : "bg-raised")}>
         {typing ? <span className="inline-flex gap-1" aria-label="Typing"><Dot /><Dot d="150ms" /><Dot d="300ms" /></span> : text}
       </div>

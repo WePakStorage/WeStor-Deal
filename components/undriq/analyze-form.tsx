@@ -191,7 +191,7 @@ export function AnalyzeForm({ left, lookupEnabled, uploadFolder }: { left: numbe
             <Field label="Property address" htmlFor="addr" hint="Pulls beds, baths, square feet, year built, last sale, taxes, value and rent estimates, comps and the active listing from public records and MLS data." className="flex-1">
               <div className="relative">
                 <MapPin className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
-                <Input id="addr" className="pl-9" placeholder="1234 Main St, Memphis, TN 38118" value={address} onChange={(e) => { setAddress(e.target.value); setRecord(null); }} disabled={busy || looking} />
+                <Input id="addr" className="pl-9" placeholder="742 Maple Ave, Springfield, IL 62704" value={address} onChange={(e) => { setAddress(e.target.value); setRecord(null); }} disabled={busy || looking} />
               </div>
             </Field>
             <Button type="button" variant="secondary" onClick={pull} disabled={busy || looking} className="sm:mb-6">
@@ -233,9 +233,9 @@ export function AnalyzeForm({ left, lookupEnabled, uploadFolder }: { left: numbe
           Quick numbers <span className="font-normal text-muted">(optional: anything you type here wins over the listing)</span>
         </summary>
         <div className="grid gap-4 border-t border-line-soft p-4 sm:grid-cols-4">
-          {qf("name", "Deal name", "12 Oak St", "text")}
-          {qf("city", "City", "Memphis", "text")}
-          {qf("state", "State", "TN", "text")}
+          {qf("name", "Deal name", "742 Maple Ave", "text")}
+          {qf("city", "City", "Springfield", "text")}
+          {qf("state", "State", "IL", "text")}
           {qf("list", "Asking price", "185,000")}
           {qf("rentMonthly", "Rent per month (total)", "1,650")}
           {qf("noi", "NOI per year", "—")}

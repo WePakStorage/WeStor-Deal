@@ -20,7 +20,7 @@ export default async function AnalysisPage({ params }: { params: Promise<{ id: s
   // Deals first run on Scout (or from the bulk analyzer) have no written memo: fill it from the numbers.
   const memoEmpty = !row.memo || (!row.memo.thesis.length && !row.memo.risks.length && !row.memo.killers.length);
   const fullMemo = full ? (memoEmpty ? { ...fallbackMemo(full), headline: row.memo?.headline || fallbackMemo(full).headline } : row.memo) : null;
-  const defaults = full ? offerDefaults(row.facts, full, { buyer: ctx.user.name, email: ctx.user.email }) : null;
+  const defaults = full ? offerDefaults(row.facts, full, {}) : null;
 
   return (
     <ResultView

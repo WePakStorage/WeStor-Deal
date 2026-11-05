@@ -343,14 +343,11 @@ function Notes({ rowId, initial }: { rowId: string; initial: string }) {
 const r1k = (v: number) => Math.round(v / 1000) * 1000;
 
 function OfferBuilder({ rowId, facts, noi, ladder, initial, script }: { rowId: string; facts: DealFacts; noi: number | null; ladder: Analysis["ladder"]; initial: OfferTerms; script: string }) {
-  const [t, setT] = React.useState<OfferTerms>(() => {
-    try {
-      const me = JSON.parse(localStorage.getItem("undriq-me") ?? "{}") as Partial<OfferTerms>;
-      return { ...initial, buyer: me.buyer || initial.buyer, entity: me.entity || "", phone: me.phone || "", email: me.email || initial.email };
-    } catch {
-      return initial;
-    }
-  });
+  // Contact fields start empty with example placeholders; nothing the user typed is remembered.
+  const [t, setT] = React.useState<OfferTerms>(initial);
+  React.useEffect(() => {
+    try { localStorage.removeItem("undriq-me"); } catch { /* private mode */ }
+  }, []);
   const [busy, setBusy] = React.useState(false);
   const toast = useToast();
   const router = useRouter();
@@ -377,11 +374,6 @@ function OfferBuilder({ rowId, facts, noi, ladder, initial, script }: { rowId: s
   };
   const save = async () => {
     setBusy(true);
-    try {
-      localStorage.setItem("undriq-me", JSON.stringify({ buyer: t.buyer, entity: t.entity, phone: t.phone, email: t.email }));
-    } catch {
-      /* private mode: fine */
-    }
     const r = await saveOffer(rowId, t);
     setBusy(false);
     if (!r.ok) return r.status === 402 ? openUpgrade(r.error) : toast(r.error, "error");
@@ -435,11 +427,11 @@ function OfferBuilder({ rowId, facts, noi, ladder, initial, script }: { rowId: s
           </div>
           <div className="grid gap-4 border-t border-line-soft pt-4 sm:grid-cols-2">
             <Field label="Send to" htmlFor="o-to"><Input id="o-to" placeholder="Listing agent or seller" value={t.recipient} onChange={(e) => set("recipient", e.target.value)} /></Field>
-            <Field label="Property" htmlFor="o-prop"><Input id="o-prop" value={t.property} onChange={(e) => set("property", e.target.value)} /></Field>
-            <Field label="Your name" htmlFor="o-buyer"><Input id="o-buyer" value={t.buyer} onChange={(e) => set("buyer", e.target.value)} /></Field>
+            <Field label="Property" htmlFor="o-prop"><Input id="o-prop" placeholder="3-bed ranch, Springfield, IL" value={t.property} onChange={(e) => set("property", e.target.value)} /></Field>
+            <Field label="Your name" htmlFor="o-buyer"><Input id="o-buyer" placeholder="Jordan Smith" value={t.buyer} onChange={(e) => set("buyer", e.target.value)} /></Field>
             <Field label="Buying entity" htmlFor="o-ent"><Input id="o-ent" placeholder="Acme Holdings LLC" value={t.entity} onChange={(e) => set("entity", e.target.value)} /></Field>
-            <Field label="Phone" htmlFor="o-ph"><Input id="o-ph" value={t.phone} onChange={(e) => set("phone", e.target.value)} /></Field>
-            <Field label="Email" htmlFor="o-em"><Input id="o-em" value={t.email} onChange={(e) => set("email", e.target.value)} /></Field>
+            <Field label="Phone" htmlFor="o-ph"><Input id="o-ph" inputMode="tel" placeholder="(555) 010-0142" value={t.phone} onChange={(e) => set("phone", e.target.value)} /></Field>
+            <Field label="Email" htmlFor="o-em"><Input id="o-em" type="email" placeholder="jordan@acmeholdings.com" value={t.email} onChange={(e) => set("email", e.target.value)} /></Field>
           </div>
         </div>
         <div className="min-w-0">

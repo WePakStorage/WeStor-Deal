@@ -1,4 +1,5 @@
 import { SiteFooter, SiteHeader } from "@/components/marketing/site-chrome";
+import { AssistantWidget } from "@/components/marketing/assistant-widget";
 import { PlanCards } from "@/components/marketing/plan-cards";
 
 export const metadata = { title: "Pricing" };
@@ -22,6 +23,7 @@ export default function Pricing() {
         </div>
       </main>
       <SiteFooter />
+      <AssistantWidget />
     </>
   );
 }

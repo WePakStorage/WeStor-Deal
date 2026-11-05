@@ -105,3 +105,9 @@ Choices made where the spec was silent or ambiguous. Each one is the simplest op
 - **PDF uploads up to 20 MB:** the browser uploads straight to the private `deal-files` Supabase bucket (folder = active space, enforced by storage RLS), the server reads and deletes it, then sends it to SI. This bypasses Vercel's 4.5 MB request limit; 20 MB keeps the base64 request under Claude's 32 MB cap. Demo mode (no storage) stays at 4 MB inline.
 - **"SI" branding:** customer-facing copy says SI (defined as Super Intelligence technology on the landing page) at the owner's request. The privacy policy keeps "AI provider" because it is a legal disclosure. Code identifiers are unchanged.
 - ESLint (flat config, `next/core-web-vitals` + `next/typescript`) runs clean; unused packages removed (dnd-kit, react-pdf, leaflet, recharts, resend).
+
+## Homepage assistant (November 2026)
+- Floating "Ask UndrIq" chat on the landing and pricing pages, streaming from `/api/assistant` (public, no sign-in).
+- Answers only from a fixed system prompt built from plan constants (cached across visitors); no tools, no data access, no storage of conversations. Won't give investment/legal/tax advice, says it's automated, steers prompt-injection back to UndrIq topics.
+- Model: `ANTHROPIC_CHAT_MODEL`, default `claude-opus-5-5` at `effort: low` with server-side fallbacks. `claude-haiku-5-5` is the low-cost option.
+- Abuse guard: last 12 turns, 1,200 characters per message, 20 messages per IP per 10 minutes (best effort, per server instance).

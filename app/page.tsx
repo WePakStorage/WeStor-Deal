@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Calculator, FileSignature, Flame, KanbanSquare, Layers, Link2, ShieldAlert, Sparkles, TrendingDown, Users } from "lucide-react";
 import { SiteFooter, SiteHeader } from "@/components/marketing/site-chrome";
+import { AssistantWidget } from "@/components/marketing/assistant-widget";
 import { PlanCards } from "@/components/marketing/plan-cards";
 import { Button } from "@/components/ui/primitives";
 
@@ -114,6 +115,7 @@ export default function Landing() {
         </section>
       </main>
       <SiteFooter />
+      <AssistantWidget />
     </>
   );
 }

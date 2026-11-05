@@ -34,6 +34,7 @@ export default async function AnalysisPage({ params }: { params: Promise<{ id: s
       offerDefaults={defaults}
       customRules={ctx.plan.features.buyBoxRules}
       records={row.records ?? null}
+      sample={view.sample}
     />
   );
 }

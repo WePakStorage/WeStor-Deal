@@ -18,7 +18,7 @@ export class PaymentRequiredError extends Error {
 
 const FEATURE_PLAN: Record<Feature, string> = {
   fullAnalysis: "Investor", pipeline: "Investor", offers: "Investor", buyers: "Investor", liveUnderwriting: "Investor", omReader: "Investor", docs: "Investor", sourcing: "Investor",
-  csvExport: "Firm", teamSpace: "Firm", bulk: "Fund", buyBoxRules: "Fund",
+  csvExport: "Firm", teamSpace: "Firm", bulk: "Fund", buyBoxRules: "Firm",
 };
 
 /** Server-side feature check against the ACTIVE space's plan. The client lock is cosmetic. */

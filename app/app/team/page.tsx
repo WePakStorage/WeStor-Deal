@@ -22,6 +22,8 @@ export default async function TeamPage() {
         ownPlan={ownPlan}
         canCreate={PLANS[ownPlan].features.teamSpace}
         seatsForOwnPlan={PLANS[ownPlan].seats}
+        teamsAllowed={PLANS[ownPlan].teams}
+        teamsOwned={teams.filter((t) => t.ownerUserId === user.id).length}
         teams={teams.map((t) => ({ ...t, seats: PLANS[t.plan].seats, members: members.find((m) => m.orgId === t.orgId)?.members ?? [] }))}
       />
     </div>

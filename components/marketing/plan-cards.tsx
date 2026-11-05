@@ -7,13 +7,6 @@ import { cn } from "@/lib/cn";
 
 const ORDER: Plan[] = ["free", "investor", "firm", "fund"];
 
-const MORE: Record<Plan, string[]> = {
-  free: ["No card needed"],
-  investor: ["Seller Motivation Decoder", "Devil's Advocate memo", "Buyer list with buy-box matching"],
-  firm: ["Owner adds and removes seats", "Everyone keeps a private space too"],
-  fund: ["Bulk analyzer: score 500 deals at once", "Priority support and onboarding call"],
-};
-
 export function PlanCards() {
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -24,15 +17,16 @@ export function PlanCards() {
           <div key={id} className={cn("flex flex-col rounded-2xl border p-6", dark ? "border-text bg-text text-ink" : "border-line bg-surface")}>
             <div className="flex items-center justify-between">
               <div className="text-sm font-medium uppercase tracking-wider opacity-70">{p.name}</div>
-              {id === "firm" ? <span className="rounded-full border border-current px-2 py-0.5 text-[11px] opacity-70">Teams</span> : null}
+              <span className={cn("rounded-full border px-2 py-0.5 text-[11px]", id === "investor" ? "border-current font-medium" : "border-current opacity-70")}>{p.hook}</span>
             </div>
             <div className="mt-3 flex items-baseline gap-1">
               <span className="display text-5xl tabular">${p.priceMonthly}</span>
               <span className="opacity-70">{id === "free" ? "forever" : "/ month"}</span>
             </div>
+            <p className="mt-1 h-5 text-xs font-medium">{p.trialDays ? `${p.trialDays}-day free trial` : id === "free" ? "No card needed" : "\u00a0"}</p>
             <p className="mt-2 text-sm opacity-70">{p.blurb}</p>
             <ul className="mt-5 flex-1 space-y-2.5">
-              {[...p.bullets, ...MORE[id]].map((f) => (
+              {p.bullets.map((f) => (
                 <li key={f} className="flex items-start gap-2 text-sm">
                   <Check className="mt-0.5 size-4 shrink-0" />
                   {f}
@@ -40,7 +34,7 @@ export function PlanCards() {
               ))}
             </ul>
             <Button asChild size="lg" variant={dark ? "secondary" : id === "free" ? "secondary" : "primary"} className={cn("mt-6 w-full", dark && "!bg-ink !text-text")}>
-              <Link href={id === "free" ? "/login?mode=signup" : `/login?next=${encodeURIComponent(`/app/settings?tab=billing&plan=${id}`)}`}>{id === "free" ? "Start free" : `Choose ${p.name}`}</Link>
+              <Link href={id === "free" ? "/login?mode=signup" : `/login?next=${encodeURIComponent(`/app/settings?tab=billing&plan=${id}`)}`}>{id === "free" ? "Analyze a deal free" : p.trialDays ? "Start 7-day free trial" : `Choose ${p.name}`}</Link>
             </Button>
           </div>
         );

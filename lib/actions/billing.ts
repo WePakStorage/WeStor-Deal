@@ -28,12 +28,14 @@ export async function startCheckout(tier: PaidPlan = "investor"): Promise<Action
       const portal = await stripe().billingPortal.sessions.create({ customer: sub.stripe_customer_id!, return_url: `${env.appUrl}/app/settings?tab=billing` });
       return { url: portal.url };
     }
+    // Free trial only on a person's first subscription, so it can't be repeated by cancelling.
+    const trialDays = sub.stripe_subscription_id ? 0 : Math.max(0, Number(process.env.STRIPE_TRIAL_DAYS ?? PLANS[plan].trialDays) || 0);
     const session = await stripe().checkout.sessions.create({
       mode: "subscription",
       line_items: [{ price: priceIdFor(plan), quantity: 1 }],
       client_reference_id: personalOrgId,
       metadata: { org_id: personalOrgId, plan },
-      subscription_data: { metadata: { org_id: personalOrgId, plan } },
+      subscription_data: { metadata: { org_id: personalOrgId, plan }, ...(trialDays > 0 && PLANS[plan].trialDays > 0 ? { trial_period_days: trialDays } : {}) },
       ...(sub.stripe_customer_id ? { customer: sub.stripe_customer_id } : { customer_email: user.email }),
       allow_promotion_codes: true,
       success_url: `${env.appUrl}/app/settings?tab=billing&checkout=success`,

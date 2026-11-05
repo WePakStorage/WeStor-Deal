@@ -23,6 +23,9 @@ describe("plans", () => {
     expect(PLANS.fund.seats).toBe(15);
     expect(PLANS.investor.features.teamSpace).toBe(false);
     expect(PLANS.fund.features.bulk && PLANS.fund.features.buyBoxRules).toBe(true);
+    expect(PLANS.firm.features.buyBoxRules).toBe(true);
+    expect(PLANS.firm.features.bulk).toBe(false);
+    expect([PLANS.firm.teams, PLANS.fund.teams]).toEqual([1, 3]);
     expect(PLANS.free.features.fullAnalysis).toBe(false);
     expect(maxPlan("investor", "fund")).toBe("fund");
   });
@@ -45,5 +48,21 @@ describe("buyer fit", () => {
     const fit = scoreBuyerFit(f, 900_000, b);
     expect(fit.score).toBeLessThan(50);
     expect(fit.no.length).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe("plan ladder", () => {
+  const order = ["free", "investor", "firm", "fund"] as const;
+  it("escalates: price, analyses, seats and features never go down", () => {
+    for (let i = 1; i < order.length; i++) {
+      const a = PLANS[order[i - 1]!], b = PLANS[order[i]!];
+      expect(b.priceMonthly).toBeGreaterThan(a.priceMonthly);
+      expect(b.analyses).toBeGreaterThan(a.analyses);
+      expect(b.seats).toBeGreaterThanOrEqual(a.seats);
+      for (const [k, v] of Object.entries(a.features)) if (v) expect(b.features[k as keyof typeof b.features]).toBe(true);
+    }
+  });
+  it("trials on Investor and Firm only", () => {
+    expect(order.map((p) => PLANS[p].trialDays)).toEqual([0, 7, 7, 0]);
   });
 });

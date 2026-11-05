@@ -82,3 +82,10 @@ Choices made where the spec was silent or ambiguous. Each one is the simplest op
 - **Conservative fill:** asking price only from an active listing; rent only for single-unit homes (RentCast's rent estimate is per unit); the value estimate is offered as ARV for houses with a note that it assumes typical condition. Anything read from the listing text or typed by the user wins over records.
 - **Cost control:** shared 30-day cache by normalized address (service role only), an app-wide monthly call cap (`RENTCAST_MONTHLY_CALLS`), and per-space lookups capped at the plan's analysis allowance. Cache hits are free.
 - **Privacy:** owner type and owner-occupied are kept; owner names are dropped. Listing agent name, phone and email are kept because they are published for exactly this purpose (sending an offer).
+
+## Plan ladder (v2)
+- **Scout's hook is the real product:** the first analysis is computed and stored in full (flagged `sample`) and stays visible; later ones store only the teaser. Saving offers or moving stages still asks for a plan.
+- **Each step adds one clear reason:** Investor = full analysis on every deal + pipeline + offers; Firm = team (1 team of 5) + buy box rules + CSV; Fund = volume (1,000/mo), 3 teams of 15, bulk analyzer, priority support.
+- **Buy box rules moved from Fund to Firm**; team-space count follows the plan (Firm 1, Fund 3). Enforced in `create_team()` / `set_buy_box()` (migration 0006) and mirrored in the demo store.
+- **7-day free trial** on Investor and Firm, only on a person's first subscription (no repeat trials). `STRIPE_TRIAL_DAYS` overrides; `trialing` already counts as paid.
+- **Safety fix:** `profiles.org_id` (the active-space pointer) is now `on delete set null`, so deleting a space can never delete a profile; `auth_org_id()` falls back to the personal space.

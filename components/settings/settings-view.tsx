@@ -174,7 +174,7 @@ function Billing(p: { plan: Plan; sub: { status: string; periodEnd: string | nul
                 ? p.sub.status === "past_due"
                   ? "Payment failed. Your plan stays on while Stripe retries the card."
                   : `Renews ${date(p.sub.periodEnd)}. ${cfg.analyses.toLocaleString()} analyses a month${cfg.seats > 1 ? `, team spaces up to ${cfg.seats} people` : ""}.`
-                : "2 free analyses with the score and best exit. Upgrade for the full analysis, pipeline and offers."}
+                : "3 free analyses (the first fully unlocked). Upgrade for the full analysis on every deal, your pipeline and offers."}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">

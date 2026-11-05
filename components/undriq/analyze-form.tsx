@@ -86,7 +86,7 @@ export function AnalyzeForm({ left, lookupEnabled }: { left: number; lookupEnabl
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setErr("");
-    if (left <= 0) return openUpgrade(plan === "free" ? "You've used your 2 free analyses. Pick a plan to keep analyzing deals." : "You've used this month's analyses.", plan === "free" ? "investor" : plan === "investor" ? "firm" : "fund");
+    if (left <= 0) return openUpgrade(plan === "free" ? "You've used your free analyses. Start a 7-day free trial to keep analyzing deals." : "You've used this month's analyses.", plan === "free" ? "investor" : plan === "investor" ? "firm" : "fund");
     if (!ready) return setErr("Paste the listing text, upload the OM, or type at least the price and rent.");
     setBusy(true);
     setStep(0);

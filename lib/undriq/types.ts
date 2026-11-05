@@ -59,7 +59,8 @@ export interface SavedOffer {
 }
 
 /** Full result for paid spaces; Scout gets the teaser only (stripped on the server). */
-export type StoredResult = { full: true; analysis: Analysis } | { full: false; teaser: Teaser };
+/** `sample: true` marks Scout's free first analysis, which stays fully unlocked. */
+export type StoredResult = { full: true; analysis: Analysis; sample?: boolean } | { full: false; teaser: Teaser };
 
 export interface AnalysisRow {
   id: string;

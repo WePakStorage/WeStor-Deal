@@ -4,7 +4,7 @@ AI deal analyzer for real estate investors and wholesalers. Paste a listing or u
 
 **Spaces.** Every account has a private space: its own pipeline and buyer list that nobody else can see. Firm ($149, 5 seats) and Fund ($399, 15 seats) owners can create shared team spaces and add people by email. Membership, seat limits and plan checks are enforced in Postgres (see `supabase/migrations/20261105000003_undriq_spaces.sql`), not just in the app.
 
-**Plans.** Scout (free, 2 analyses with the score and best exit), Investor $49 (40/month), Firm $149 (200/month + teams + CSV), Fund $399 (1,000/month fair use + bulk analyzer + buy box rules). The server strips the full analysis for Scout; the blur in the UI is cosmetic.
+**Plans.** Scout (free: 3 analyses, the first fully unlocked, then score and best exit), Investor $49 (50/month, full analysis, pipeline, offers; 7-day trial), Firm $149 (250/month, 1 team of 5, buy box rules, CSV; 7-day trial), Fund $399 (1,000/month fair use, 3 teams of 15, bulk analyzer, priority support). The server strips the full analysis for Scout after the first; the blur in the UI is cosmetic.
 
 Next.js (App Router) · TypeScript strict · Tailwind v4 · Supabase · Stripe · Anthropic Claude · Resend · PostHog · Vitest · Playwright.
 

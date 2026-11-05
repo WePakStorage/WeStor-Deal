@@ -14,7 +14,7 @@ import { track } from "@/components/analytics";
 
 type TeamRow = Space & { seats: number; members: SpaceMember[] };
 
-export function TeamView(p: { me: string; activeOrgId: string; ownPlan: Plan; canCreate: boolean; seatsForOwnPlan: number; teams: TeamRow[] }) {
+export function TeamView(p: { me: string; activeOrgId: string; ownPlan: Plan; canCreate: boolean; seatsForOwnPlan: number; teamsAllowed: number; teamsOwned: number; teams: TeamRow[] }) {
   const { openUpgrade } = useApp();
   const toast = useToast();
   const router = useRouter();
@@ -45,12 +45,13 @@ export function TeamView(p: { me: string; activeOrgId: string; ownPlan: Plan; ca
       {p.teams.map((t) => <TeamCard key={t.orgId} t={t} me={p.me} active={t.orgId === p.activeOrgId} act={act} pending={pending} />)}
 
       <Card>
-        <CardHeader title="Create a team space" description={p.canCreate ? `Your ${PLANS[p.ownPlan].name} plan includes team spaces for up to ${p.seatsForOwnPlan} people, you included.` : "Team spaces come with Firm (5 people) and Fund (15 people)."} />
+        <CardHeader title="Create a team space" description={p.canCreate ? `Your ${PLANS[p.ownPlan].name} plan includes ${p.teamsAllowed} team space${p.teamsAllowed === 1 ? "" : "s"} of up to ${p.seatsForOwnPlan} people, you included. You've used ${p.teamsOwned}.` : "Team spaces come with Firm (1 team of 5) and Fund (3 teams of up to 15)."} />
         <form
           className="flex flex-col gap-2 p-5 sm:flex-row"
           onSubmit={(e) => {
             e.preventDefault();
             if (!p.canCreate) return openUpgrade("Team spaces come with Firm and Fund.", "firm");
+            if (p.teamsOwned >= p.teamsAllowed) return openUpgrade("Fund includes 3 team spaces of up to 15 people.", "fund");
             act(async () => {
               const r = await createTeam(name);
               if (r.ok) {

@@ -9,7 +9,7 @@ export const metadata = { title: "Buy box rules" };
 
 export default async function RulesPage() {
   const ctx = await requireContext();
-  if (!ctx.plan.features.buyBoxRules) return <UpgradeCard title="Your own buy box rules" body="Set your ARV percentage, fees, cap rates, financing and flip margins. Every score, max offer and offer ladder in this space uses them." min="fund" />;
+  if (!ctx.plan.features.buyBoxRules) return <UpgradeCard title="Your own buy box rules" body="Set your ARV percentage, fees, cap rates, financing and flip margins. Every score, max offer and offer ladder in this space uses them." min="firm" />;
   const rules = await rulesFor(ctx);
   return (
     <div className="mx-auto max-w-4xl">

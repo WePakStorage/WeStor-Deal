@@ -17,7 +17,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <Link href="/" className="mb-8 flex justify-center"><BrandMark /></Link>
         <div className="rounded-2xl border border-line bg-surface p-7 shadow-panel">
           <h1 className="text-xl font-semibold tracking-tight">{sp.mode === "signup" ? "Create your free account" : "Welcome back"}</h1>
-          <p className="mt-1 text-sm text-muted">{sp.mode === "signup" ? "2 free deal analyses. No card needed." : "Sign in to UndrIq, or create a free account."}</p>
+          <p className="mt-1 text-sm text-muted">{sp.mode === "signup" ? "Your first deal analysis is fully unlocked. No card needed." : "Sign in to UndrIq, or create a free account."}</p>
           <LoginForm demo={demo} next={sp.next ?? "/app"} initialMode={sp.mode === "signup" ? "signup" : "signin"} />
           {sp.error ? <p role="alert" className="mt-4 text-sm text-stop">{authMessage(sp.error)}</p> : null}
         </div>

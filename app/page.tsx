@@ -37,10 +37,10 @@ export default function Landing() {
               UndrIq is the AI acquisitions analyst for investors and wholesalers. Paste a listing and get a deal score, five exit strategies, your offer ladder and a ready-to-send offer.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Button asChild size="lg"><Link href="/login?mode=signup">Start free with 2 analyses <ArrowRight /></Link></Button>
+              <Button asChild size="lg"><Link href="/login?mode=signup">Analyze your first deal free <ArrowRight /></Link></Button>
               <Button asChild size="lg" variant="secondary"><Link href="/pricing">See pricing</Link></Button>
             </div>
-            <p className="mt-3 text-xs text-muted">Sign up with your email. No card needed.</p>
+            <p className="mt-3 text-xs text-muted">Your first analysis is fully unlocked. No card needed.</p>
           </div>
 
           <div className="mx-auto mt-14 max-w-4xl rounded-3xl border border-line bg-surface p-5 shadow-panel sm:p-8" aria-label="Example analysis">
@@ -94,7 +94,7 @@ export default function Landing() {
 
         <section className="mx-auto max-w-[1200px] px-4 pb-20 sm:px-6" id="pricing">
           <h2 className="display text-4xl sm:text-5xl">Pricing</h2>
-          <p className="mt-3 text-muted">Start with 2 free analyses. Upgrade when you&apos;re making offers every week.</p>
+          <p className="mt-3 text-muted">Your first analysis is fully unlocked. Paid plans start with a 7-day free trial.</p>
           <div className="mt-8"><PlanCards /></div>
         </section>
 

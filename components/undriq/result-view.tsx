@@ -45,6 +45,8 @@ export function ResultView(p: {
   offerDefaults: OfferTerms | null;
   customRules: boolean;
   records: PropertyRecord | null;
+  /** Scout's free, fully unlocked first analysis. */
+  sample: boolean;
 }) {
   const { row, facts, teaser, full, memo } = p;
   const { openUpgrade } = useApp();
@@ -75,11 +77,11 @@ export function ResultView(p: {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Link href={full ? "/app/pipeline" : "/app"} className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-text">
-          <ArrowLeft className="size-4" /> {full ? "Pipeline" : "Analyze"}
+        <Link href={full && !p.sample ? "/app/pipeline" : "/app"} className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-text">
+          <ArrowLeft className="size-4" /> {full && !p.sample ? "Pipeline" : "Analyze"}
         </Link>
         <div className="flex items-center gap-2">
-          {full ? (
+          {full && !p.sample ? (
             <Select aria-label="Stage" className="h-9 w-44" value={row.stage} onChange={(e) => changeStage(e.target.value)} disabled={pending}>
               {ANALYSIS_STAGES.map((s) => <option key={s} value={s}>{ANALYSIS_STAGE_LABEL[s]}</option>)}
             </Select>
@@ -87,6 +89,16 @@ export function ResultView(p: {
           <Button variant="ghost" size="icon" aria-label="Delete deal" onClick={remove} disabled={pending}><Trash2 /></Button>
         </div>
       </div>
+
+      {p.sample ? (
+        <div className="flex flex-col gap-3 rounded-2xl border border-text bg-text px-5 py-4 text-ink sm:flex-row sm:items-center">
+          <div className="min-w-0 flex-1">
+            <div className="font-semibold">Your first analysis is on us: fully unlocked.</div>
+            <p className="text-sm opacity-75">This is what every deal looks like on a paid plan, plus saving to your pipeline and sending offers. Try Investor free for 7 days.</p>
+          </div>
+          <Button className="!bg-ink !text-text" onClick={() => openUpgrade("Get the full analysis on every deal, save your pipeline and send offers.")}>Start free trial</Button>
+        </div>
+      ) : null}
 
       {/* Hero */}
       <Card className="p-5 sm:p-7">

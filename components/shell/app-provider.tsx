@@ -85,7 +85,10 @@ function Inner({ plan, demo, status, spaceKind, children }: { plan: Plan; demo: 
               const top = t === "fund";
               return (
                 <div key={t} className={`flex flex-col rounded-xl border p-5 ${top ? "border-text bg-text text-ink" : "border-line bg-raised"}`}>
-                  <div className="text-sm font-medium uppercase tracking-wider opacity-70">{cfg.name}</div>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-sm font-medium uppercase tracking-wider opacity-70">{cfg.name}</div>
+                    <span className="rounded-full border border-current px-2 py-0.5 text-[11px] opacity-80">{cfg.hook}</span>
+                  </div>
                   <div className="mt-2 flex items-baseline gap-1">
                     <span className="text-4xl font-semibold tracking-tight tabular">${cfg.priceMonthly}</span>
                     <span className="opacity-70">/ mo</span>
@@ -105,7 +108,7 @@ function Inner({ plan, demo, status, spaceKind, children }: { plan: Plan; demo: 
                     onClick={() => checkout(t)}
                     disabled={pending || plan === t}
                   >
-                    {plan === t ? "Your plan" : pending && picked === t ? "Opening checkout…" : `Choose ${cfg.name}`}
+                    {plan === t ? "Your plan" : pending && picked === t ? "Opening checkout…" : cfg.trialDays && plan === "free" ? "Start 7-day free trial" : `Choose ${cfg.name}`}
                   </Button>
                 </div>
               );

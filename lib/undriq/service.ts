@@ -45,14 +45,16 @@ export async function quotaFor(ctx: Ctx) {
 }
 
 /** What the browser may see for this row on this plan. Scout never receives the full engine output. */
-export function viewFor(ctx: Ctx, row: AnalysisRow, rules: BuyBoxRules): { full: Analysis | null; teaser: ReturnType<typeof teaser> } {
+export function viewFor(ctx: Ctx, row: AnalysisRow, rules: BuyBoxRules): { full: Analysis | null; teaser: ReturnType<typeof teaser>; sample: boolean } {
   if (ctx.plan.features.fullAnalysis) {
     // Recompute from facts so the page always reflects the space's current buy box rules.
     const a = analyze(row.facts, rules);
-    return { full: a, teaser: teaser(a) };
+    return { full: a, teaser: teaser(a), sample: false };
   }
-  if (row.result.full) return { full: null, teaser: teaser(row.result.analysis) };
-  return { full: null, teaser: row.result.teaser };
+  // Scout's free first analysis stays fully visible (it was computed and stored in full on purpose).
+  if (row.result.full && row.result.sample) return { full: row.result.analysis, teaser: teaser(row.result.analysis), sample: true };
+  if (row.result.full) return { full: null, teaser: teaser(row.result.analysis), sample: false };
+  return { full: null, teaser: row.result.teaser, sample: false };
 }
 
 const k1 = (v: number | null | undefined) => (v == null || !Number.isFinite(v) ? null : Math.round(v / 1000) * 1000);
@@ -95,7 +97,7 @@ export function fallbackMemo(a: Analysis): Memo {
 export async function runAnalysis(ctx: Ctx, input: AnalyzeInput, pdf: Uint8Array | null): Promise<AnalysisRow> {
   const q = await quotaFor(ctx);
   if (q.left <= 0) {
-    throw new HttpError(402, ctx.plan.id === "free" ? "You've used your 2 free analyses. Pick a plan to keep going." : `You've used all ${q.total} analyses this month on ${ctx.plan.name}.`);
+    throw new HttpError(402, ctx.plan.id === "free" ? `You've used your ${q.total} free analyses. Start a 7-day free trial to keep going.` : `You've used all ${q.total} analyses this month on ${ctx.plan.name}.`);
   }
   const hourAgo = new Date(Date.now() - 3_600_000).toISOString();
   if ((await ctx.uq.countUsage(ctx.orgId, "analysis", hourAgo)) >= 60) throw new HttpError(429, "That's a lot of analyses in an hour. Try again shortly.");
@@ -154,9 +156,13 @@ export async function runAnalysis(ctx: Ctx, input: AnalyzeInput, pdf: Uint8Array
   const a = analyze(facts, rules);
   if (!a.best && !a.noi && !facts.list) throw new HttpError(422, "We couldn't find a price or any income in that listing. Type the asking price and the rent or NOI, then run it again.");
 
-  // 3. Write (AI, paid plans only; numbers come from step 2).
+  // Scout's first analysis is the full product, free: the best way to show what a paid plan gets.
+  const sample = !ctx.plan.features.fullAnalysis && q.used === 0;
+  const full = ctx.plan.features.fullAnalysis || sample;
+
+  // 3. Write (AI, for full analyses only; numbers come from step 2).
   let memo: Memo | null = null;
-  if (ctx.plan.features.fullAnalysis) {
+  if (full) {
     memo = fallbackMemo(a);
     if (isAnthropicConfigured()) {
       try {
@@ -176,7 +182,7 @@ export async function runAnalysis(ctx: Ctx, input: AnalyzeInput, pdf: Uint8Array
   }
 
   await ctx.uq.recordUsage(ctx.orgId, ctx.user.id, "analysis", tokensIn, tokensOut);
-  const result: StoredResult = ctx.plan.features.fullAnalysis ? { full: true, analysis: a } : { full: false, teaser: teaser(a) };
+  const result: StoredResult = full ? { full: true, analysis: a, ...(sample ? { sample: true } : {}) } : { full: false, teaser: teaser(a) };
   return ctx.uq.createAnalysis(ctx.orgId, ctx.user.id, {
     name: facts.name.slice(0, 140),
     asset,
@@ -189,7 +195,7 @@ export async function runAnalysis(ctx: Ctx, input: AnalyzeInput, pdf: Uint8Array
     facts,
     result,
     memo: memo ?? { ...fallbackMemo(a), thesis: [], risks: [], nextSteps: [] },
-    motivation: ctx.plan.features.fullAnalysis ? motivation : null,
+    motivation: full ? motivation : null,
     offers: [],
     notes: "",
     records,

@@ -29,7 +29,7 @@ const NAV: NavItem[] = [
   { href: "/app/buyers", label: "Buyers", icon: Users, min: "investor", mobile: true },
   { href: "/app/team", label: "Team", icon: Layers, mobile: true },
   { href: "/app/bulk", label: "Bulk analyzer", icon: Sparkles, min: "fund" },
-  { href: "/app/rules", label: "Buy box rules", icon: SlidersHorizontal, min: "fund" },
+  { href: "/app/rules", label: "Buy box rules", icon: SlidersHorizontal, min: "firm" },
   { href: "/app/deals", label: "Storage OM tools", icon: Warehouse, min: "investor" },
   { href: "/app/settings", label: "Settings", icon: Settings, mobile: true },
 ];

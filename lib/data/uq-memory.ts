@@ -94,7 +94,8 @@ export const memoryUqStore: UqStore = {
   async createTeam(userId, name) {
     if (PLANS[userPlan(userId)].rank < 2) throw new SpaceError(403, "Team spaces come with Firm and Fund.");
     const owned = [...mem().meta.values()].filter((m) => m.kind === "team" && m.owner === userId).length;
-    if (owned >= 3) throw new SpaceError(400, "You can own up to 3 team spaces.");
+    const cfg = PLANS[userPlan(userId)];
+    if (owned >= cfg.teams) throw new SpaceError(400, `${cfg.name} includes ${cfg.teams} team space${cfg.teams === 1 ? "" : "s"}.${cfg.id === "fund" ? " Delete one to create another." : " Fund includes 3."}`);
     const id = randomUUID();
     const me = demoTables.profiles().find((p) => p.user_id === userId);
     demoTables.orgs().push({
@@ -167,7 +168,7 @@ export const memoryUqStore: UqStore = {
     return clone(mem().meta.get(orgId)?.buyBox ?? {});
   },
   async setBuyBox(orgId, rules) {
-    if (PLANS[demoSpacePlan(orgId)].rank < 3) throw new SpaceError(403, "Buy box rules come with Fund.");
+    if (!PLANS[demoSpacePlan(orgId)].features.buyBoxRules) throw new SpaceError(403, "Buy box rules come with Firm and Fund.");
     const m = mem().meta.get(orgId);
     if (m) m.buyBox = clone(rules ?? {});
   },
